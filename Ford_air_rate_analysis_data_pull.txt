@@ -1,0 +1,44 @@
+AF_US tabledata pull
+let
+    //pulling in and cleaning the data from the shared excel file
+    Source = Excel.Workbook(Web.Contents("https://dsvcorp.sharepoint.com/teams/FORD-GlobalAirfreightAward/Shared%20Documents/General/AOD%20AIR%20Bidding%20-%20Ford%20Production/Ford%20AIR%20Rate%20Card%20-%20Production.xlsx"), null, true),
+    Custom1 = Source{[Item="AF US",Kind="Sheet"]}[Data],
+    #"Removed Blank Rows" = Table.SelectRows(Custom1, each not List.IsEmpty(List.RemoveMatchingItems(Record.FieldValues(_), {"", null}))),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Blank Rows", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"DSV Lane ID", type text}, {"SERVICE", type text}, {"ORIGIN REGION", type text}, {"ORIGIN COUNTRY", type text}, {"DESTINATION COUNTRY", type text}, {"OD Pair", type text}, {"TRANSIT TIME REQUIREMENT (HRS)", type text}, {"CURRENCY", type text}, {"AIRFREIGHT MIN", Int64.Type}, {"<500KG", type number}, {"+500KG", type number}, {"+1000KG", type number}, {"FSC (PER KG)", type number}, {"SSC (PER KG)", type number}, {"Oversize Surcharge", type any}, {"Update Date", type any}, {"Update User", type text}, {"Comments ", type text}})
+in
+    #"Changed Type"
+
+AF_MX tabledata pull
+let
+    //pulling in and cleaning the data from the shared excel file
+    Source = Excel.Workbook(Web.Contents("https://dsvcorp.sharepoint.com/teams/FORD-GlobalAirfreightAward/Shared%20Documents/General/AOD%20AIR%20Bidding%20-%20Ford%20Production/Ford%20AIR%20Rate%20Card%20-%20Production.xlsx"), null, true),
+    Custom1 = Source{[Item="AF MX",Kind="Sheet"]}[Data],
+    #"Removed Blank Rows" = Table.SelectRows(Custom1, each not List.IsEmpty(List.RemoveMatchingItems(Record.FieldValues(_), {"", null}))),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Blank Rows", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"DSV Lane ID", type text}, {"SERVICE", type text}, {"ORIGIN REGION", type text}, {"ORIGIN COUNTRY", type text}, {"DESTINATION COUNTRY", type text}, {"OD Pair", type text}, {"TRANSIT TIME REQUIREMENT (HRS)", type text}, {"CURRENCY", type text}, {"AIRFREIGHT MIN", Int64.Type}, {"<500KG", type number}, {"+500KG", type number}, {"+1000KG", type number}, {"FSC (PER KG)", type number}, {"SSC (PER KG)", type number}, {"Oversize Surcharge", type any}, {"Update Date", type any}, {"Update User", type text}, {"Comments ", type text}})
+in
+    #"Changed Type"
+
+let
+    //pulled in and cleaned table
+    Source = Table.Combine({AF_MX, AF_US}),
+    #"Added datetime stamp" = Table.AddColumn(Source, "Adding datetime stamp", each DateTime.LocalNow()),
+    #"Extracted day" = Table.AddColumn(#"Added datetime stamp", "Extract day from datetimestamp", each Date.DayOfYear([Adding datetime stamp])),
+    #"Extracted year" = Table.AddColumn(#"Extracted day", "Extract year of datetime stamp", each Date.Year([Adding datetime stamp])),
+    //created primary key to allow for duplicate removal in historical table
+    Creating_primary_key = Table.CombineColumns(Table.TransformColumnTypes(#"Extracted year", {{"Extract day from datetimestamp", type text}, {"Extract year of datetime stamp", type text}}, "en-US"),{"DSV Lane ID", "SERVICE", "Extract day from datetimestamp", "Extract year of datetime stamp"},Combiner.CombineTextByDelimiter("", QuoteStyle.None),"Primary_key")
+in
+    Creating_primary_key
+
+let
+    //pulled in data from table combining the MX and US tables
+    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i44FAA==", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [SERVICE = _t, #"ORIGIN REGION" = _t, #"ORIGIN COUNTRY" = _t, #"DESTINATION COUNTRY" = _t, #"OD Pair" = _t, #"TRANSIT TIME REQUIREMENT (HRS)" = _t, CURRENCY = _t, #"AIRFREIGHT MIN" = _t, #"<100KG" = _t, #"<500KG" = _t, #"+500KG" = _t, #"+1000KG" = _t, #"FSC (PER KG)" = _t, #"SSC (PER KG)" = _t, #"Oversize Surcharge" = _t, #"Update Date" = _t, #"Update User" = _t, #"Comments " = _t, #"Adding datetime stamp" = _t, Primary_keys = _t]),
+    #"Renamed Columns" = Table.RenameColumns(Source,{{"Primary_keys", "Primary_key"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"SERVICE", type text}, {"ORIGIN REGION", type text}, {"ORIGIN COUNTRY", type text}, {"DESTINATION COUNTRY", type text}, {"OD Pair", type text}, {"TRANSIT TIME REQUIREMENT (HRS)", type text}, {"CURRENCY", type text}, {"AIRFREIGHT MIN", type text}, {"<100KG", type text}, {"<500KG", type text}, {"+500KG", type text}, {"+1000KG", type text}, {"FSC (PER KG)", type text}, {"SSC (PER KG)", type text}, {"Oversize Surcharge", type text}, {"Update Date", type text}, {"Update User", type text}, {"Comments ", type text}, {"Adding datetime stamp", type text}, {"Primary_key", type text}}),
+    // adding the data
+    #"Appended Query" = Table.Combine({#"Changed Type", data_pull}),
+    //removing duplicate keys
+    #"Removed Duplicates" = Table.Distinct(#"Appended Query", {"Primary_key"})
+in
+    #"Removed Duplicates"
