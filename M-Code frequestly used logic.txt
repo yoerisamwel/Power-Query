@@ -8,3 +8,4 @@ and Time.From([Posted]) <= Time.From(#datetime(1899, 12, 30,17, 00, 0)) then tru
 = Table.AddColumn(#"Added Weight (kgs)", "Missed Kgs", each if [Response Time] <> null then if [Response Time]="NO RESPONSE" 
 then [#"Added Weight (kgs)"] else 0 else 0, Int64.Type)
 
+
