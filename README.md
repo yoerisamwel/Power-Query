@@ -1,5 +1,5 @@
 # M-Code
-Notes from projects I worked on where creating a excel file with M-Code was the best solution.
+Notes from projects I worked on where creating a excel file with Power Query was the best solution.
 
 While working at DSV I found that ofthen I worked with various teams without team members with a coding background. We did several projects to create excel files for the analysis of data and to create feedback reports on the quality of manually generated data in CargoWise1. Writing these scripts in M-Code in excel files allow me to share them across teams without the need to have them install any software. I could not achieve the same with Python scripts as the EXE wrappers I used to wrap my Python scripts are blocked by the DSV firewall. I found I could get the same result with minimal resistance by writing the logic in a excel file that I can share with other teams allowing them to do work with the scripts.
 
