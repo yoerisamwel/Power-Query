@@ -2,26 +2,26 @@ AOD_Bid_Stats_Merge_2023
 The m-code used to recreate Steves report in which he monitors the airfreight wins and losses for the import business
 
 let
-    //importing data from excel file in sharepoint
+    //Data source
     Source = Excel.Workbook(Web.Contents("https://dsvcorp.sharepoint.com/teams/FORD-GlobalAirfreightAward/Shared%20Documents/General/Performance%20Metrics/AOD%20Bidding%20Stats/AOD%20Bid%20Stats%20Merge%202023.xlsx"), null, true),
     Custom1 = Source{[Item="Sheet1",Kind="Sheet"]}[Data],
-    //initial cleaning of the data and layout of the table
+    //Data cleaning
     #"Promoted Headers" = Table.PromoteHeaders(Custom1, [PromoteAllScalars=true]),
     #"Remove pre-calc_columns" = Table.RemoveColumns(#"Promoted Headers",{"Year", "Month", "Week #", "OD Lane Pairs", "Origin", "Destination", "Response (Y/N)", "Declined", "Award Confirmed", "Response Time", "Time Posted", "After Hours", "Posted During Operating Hours", "Bid During Operating Hours", "Weight (kgs)", "Cost Per KG", "Missed Kgs", "Estimated Revenue"}),
     #"Changed Type" = Table.TransformColumnTypes(#"Remove pre-calc_columns",{{"Shipment", Int64.Type}, {"Call Date", type date}, {"Bill To", type text}, {"Shipper", type text}, {"Ready", type datetime}, {"Consignee", type text}, {"Need", type datetime}, {"Cont", Int64.Type}, {"Pounds", type number}, {"Miles", type number}, {"Response", type any}, {"Who", type text}, {"Award", type text}, {"Unit", type text}, {"Mode", type text}, {"Posted", type datetime}, {"Responded", type datetime}, {"Awarded", type datetime}}),
-    //extracting datapoints to be used in visualization filters
+    //Added formula's requested by Steve
     #"Extract Year" = Table.AddColumn(#"Changed Type", "Year", each Date.Year([Posted])),
     #"Extract Month" = Table.AddColumn(#"Extract Year", "Month", each Date.MonthName([Posted])),
     #"Extract Week" = Table.AddColumn(#"Extract Month", "Week #", each Date.WeekOfYear([Posted])),
-    //joining the two dataframes that contain the new data from US and MX
+    //adding in destination country code held against shipper list
     #"Left join shippers origin" = Table.NestedJoin(#"Extract Week", {"Shipper"}, Import_Shippers, {"Shipper"}, "Import_Shippers", JoinKind.LeftOuter),
-    #"Expanded Origin" = Table.ExpandTableColumn(#"Left join shippers origin", "Import_Shippers", {"Country"}, {"Origin.Country"}),
-    //joining the new dataset into the dataset with historical data
-    #"Left join consignee destination" = Table.NestedJoin(#"Expanded Origin", {"Consignee"}, Import_Shippers, {"Consignee"}, "Import_Shippers", JoinKind.LeftOuter),
-    #"Expanded Destination" = Table.ExpandTableColumn(#"Left join consignee destination", "Import_Shippers", {"Country_1"}, {"Destination.Country_1"}),
-    //creating the lane pairs between destination and the origin
-    #"Merged OD Lane Pair" = Table.CombineColumns(#"Expanded Destination",{"Origin.Country", "Destination.Country_1"},Combiner.CombineTextByDelimiter("-", QuoteStyle.None),"OD Lane Pair"),
-    //calculation based on the original sheet provided by Steve
+    #"Expanded Destination" = Table.ExpandTableColumn(#"Left join shippers origin", "Import_Shippers", {"Country"}, {"Origin.Country"}),
+    #"Renamed Destination column" = Table.RenameColumns(#"Expanded Destination",{{"Origin.Country", "Destination.Country"}}),
+    //adding in origin country held against the same list
+    #"Left join consignee destination" = Table.NestedJoin(#"Renamed Destination column", {"Consignee"}, Import_Shippers, {"Consignee"}, "Import_Shippers", JoinKind.LeftOuter),
+    #"Expanded Origin" = Table.ExpandTableColumn(#"Left join consignee destination", "Import_Shippers", {"Country"}, {"Origin.Country"}),
+    //duplicated all the excel formula's sed by Steve
+    #"Merged OD Lane Pair" = Table.AddColumn(#"Expanded Origin", "OD Lane Pair", each [Origin.Country] & [Destination.Country]),
     #"Added Response Y/N" = Table.AddColumn(#"Merged OD Lane Pair", "Response Y/N", each Value.Is([Response],type text)),
     #"Added Declined" = Table.AddColumn(#"Added Response Y/N", "Declined", each [Response] = "Declined"),
     #"Added Award Confirmed" = Table.AddColumn(#"Added Declined", "Award Confirmed", each [Award] = "Yes"),
@@ -34,18 +34,21 @@ let
     #"Added Bid During Operating Hours" = Table.AddColumn(#"Added Posted During Operating Hours", "Bid During Operating Hours", each if [Responded] <> null then if Time.From([Responded]) >= Time.From(#datetime(1899, 12, 30,6, 30, 0)) 
 and Time.From([Responded]) <= Time.From(#datetime(1899, 12, 30,17, 00, 0)) then true else false else "BLANK"),
     #"Added Cost per KG" = Table.AddColumn(#"Added Bid During Operating Hours", "Cost per KG", each if [Pounds] <= 100 then 0 else if [Response] = "No Response" then 0 else if [Response] = "Declined" then 0 else [Response] / ([Pounds]*0.453592)),
-    //steps to determine the average of the Cost per KG column used in the Estimated Revenue column
+    //Pulling out the average of a column
     #"Created column list" = Table.Column(#"Added Cost per KG", "Cost per KG"),
     #"Removed 0's from list" = List.Select(#"Created column list", each _ <> 0),
     AverageWithoutZeros_value = List.Average(#"Removed 0's from list"),
+    //Using the average to get an estimate of the missed revenue
     #"Estimated Revenue" = Table.AddColumn(#"Added Cost per KG", "newstep", each if [Cost per KG] = 0 then AverageWithoutZeros_value * [Missed Kgs] else [Response]),
+    //Remade several other excel foprmula's used by Steve
     #"Changed Type Cost per KG" = Table.TransformColumnTypes(#"Added Cost per KG",{{"Cost per KG", type number}, {"Response Y/N", Int64.Type}}),
-    #"Added Participation" = Table.AddColumn(#"Changed Type Cost per KG", "Participation", each if [#"Response Y/N"] > 0 then "TRUE" else "FALSE")
+    #"Added Participation" = Table.AddColumn(#"Changed Type Cost per KG", "Participation", each if [#"Response Y/N"] > 0 then "TRUE" else "FALSE"),
+    #"Filtered Rows" = Table.SelectRows(#"Added Participation", each ([OD Lane Pair] = null))
 in
-    #"Added Participation"
+    #"Filtered Rows"
 
 AOD_BID_stats_grouped_unique
-The logic allow me to group by the unique shipment numbers
+Tested this logic example from Chat GPT
 
 let
     Source = AOD_Bid_Stats_Merge_2023,
@@ -76,8 +79,7 @@ let
     //joining the new dataset into the dataset with historical data
     #"Left join consignee destination" = Table.NestedJoin(#"Expanded Origin", {"Consignee"}, Import_Shippers, {"Consignee"}, "Import_Shippers", JoinKind.LeftOuter),
     #"Expanded Destination" = Table.ExpandTableColumn(#"Left join consignee destination", "Import_Shippers", {"Country_1"}, {"Destination.Country_1"}),
-    //creating the lane pairs between destination and the origin
-    #"Merged OD Lane Pair" = Table.CombineColumns(#"Expanded Destination",{"Origin.Country", "Destination.Country_1"},Combiner.CombineTextByDelimiter("-", QuoteStyle.None),"OD Lane Pair"),
+    #"Merged OD Lane Pair" = Table.AddColumn(#"Expanded Destination", "OD Lane Pair", each [Origin.Country] & [Destination.Country_1]),
     //calculation based on the original sheet provided by Steve
     #"Added Response Y/N" = Table.AddColumn(#"Merged OD Lane Pair", "Response Y/N", each Value.Is([Response],type text)),
     #"Added Declined" = Table.AddColumn(#"Added Response Y/N", "Declined", each [Response] = "Declined"),
@@ -112,11 +114,42 @@ Rate data code
 Code used to clean up the rate data table
 let
     Source = Excel.CurrentWorkbook(){[Name="tbl_rate_data"]}[Content],
-    #"Changed Type" = Table.TransformColumnTypes(Source,{{"DSV Lane ID", type text}, {"SERVICE", type text}, {"ORIGIN REGION", type text}, {"ORIGIN COUNTRY", type text}, {"DESTINATION COUNTRY", type text}, {"OD Pair", type text}, {"TRANSIT TIME REQUIREMENT (HRS)", type text}, {"CURRENCY", type text}, {"AIRFREIGHT MIN", Int64.Type}, {"<500KG", type number}, {"+500KG", type number}, {"+1000KG", type number}, {"FSC (PER KG)", type number}, {"SSC (PER KG)", type number}, {"Oversize Surcharge", type any}, {"Update Date", type datetime}, {"Update User", type text}, {"Comments ", type text}, {"Validation_date", type datetime}}),
-    #"Merged Columns" = Table.CombineColumns(Table.TransformColumnTypes(#"Changed Type", {{"Validation_date", type text}, {"count", type text}}, "en-US"),{"DSV Lane ID", "Validation_date", "count"},Combiner.CombineTextByDelimiter("", QuoteStyle.None),"Key_column"),
-    #"Reordered Columns" = Table.ReorderColumns(#"Merged Columns",{"Key_column", "SERVICE", "ORIGIN REGION", "ORIGIN COUNTRY", "DESTINATION COUNTRY", "OD Pair", "TRANSIT TIME REQUIREMENT (HRS)", "CURRENCY", "AIRFREIGHT MIN", "<500KG", "+500KG", "+1000KG", "FSC (PER KG)", "SSC (PER KG)", "Oversize Surcharge", "Update Date", "Update User", "Comments "}),
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"DSV Lane ID", type text}, {"SERVICE", type text}, {"ORIGIN REGION", type text}, {"ORIGIN COUNTRY", type text}, {"DESTINATION COUNTRY", type text}, {"OD Pair", type text}, {"TRANSIT TIME REQUIREMENT (HRS)", type text}, {"CURRENCY", type text}, {"AIRFREIGHT MIN", Int64.Type}, {"<500KG", type number}, {"+500KG", type number}, {"+1000KG", type number}, {"FSC (PER KG)", type number}, {"SSC (PER KG)", type number}, {"Oversize Surcharge", type any}, {"Update Date", type text}, {"Update User", type text}, {"Comments ", type text}, {"Validation_date", type datetime}, {"count", type text}}),
+    #"Added Key_column" = Table.AddColumn(#"Changed Type", "Key_column", each [DSV Lane ID] & [Update Date] & [count]),
+    #"Reordered Columns" = Table.ReorderColumns(#"Added Key_column",{"Key_column", "SERVICE", "ORIGIN REGION", "ORIGIN COUNTRY", "DESTINATION COUNTRY", "OD Pair", "TRANSIT TIME REQUIREMENT (HRS)", "CURRENCY", "AIRFREIGHT MIN", "<500KG", "+500KG", "+1000KG", "FSC (PER KG)", "SSC (PER KG)", "Oversize Surcharge", "Update Date", "Update User", "Comments "}),
     #"Added Custom" = Table.AddColumn(#"Reordered Columns", "+500KG Total", each [#"+500KG"]+[#"+1000KG"]+[#"FSC (PER KG)"]+[#"SSC (PER KG)"]),
-    #"Merged Columns1" = Table.CombineColumns(#"Added Custom",{"ORIGIN COUNTRY", "DESTINATION COUNTRY"},Combiner.CombineTextByDelimiter("-", QuoteStyle.None),"OD Lane Pairs"),
-    #"Reordered Columns1" = Table.ReorderColumns(#"Merged Columns1",{"Key_column", "SERVICE", "ORIGIN REGION", "OD Pair", "TRANSIT TIME REQUIREMENT (HRS)", "CURRENCY", "AIRFREIGHT MIN", "<500KG", "+500KG", "+1000KG", "FSC (PER KG)", "SSC (PER KG)", "Oversize Surcharge", "Update Date", "Update User", "Comments ", "+500KG Total", "OD Lane Pairs"})
+    #"Added OD Lane Pairs" = Table.AddColumn(#"Added Custom", "Merged OD Lane Pairs", each [ORIGIN COUNTRY] & [DESTINATION COUNTRY])
 in
-    #"Reordered Columns1"
+    #"Added OD Lane Pairs"
+
+Import shippers table
+let
+    Source = Excel.CurrentWorkbook(){[Name="Shippers"]}[Content],
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Column1", type text}, {"Column2", type text}, {"Column3", type any}, {"Column4", type text}, {"Column5", type text}, {"Column6", type text}}),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Changed Type", [PromoteAllScalars=true]),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Promoted Headers",{{"Shipper", type text}, {"Country", type text}, {"Column3", type any}, {"Consignee", type text}, {"Country_1", type text}, {"State", type text}}),
+    #"Removed Columns" = Table.RemoveColumns(#"Changed Type1",{"Column3"})
+in
+    #"Removed Columns"
+
+Latest rates table
+
+let
+    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i44FAA==", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [#"DSV Lane ID" = _t, Key_column = _t, SERVICE = _t, #"ORIGIN REGION" = _t, #"ORIGIN COUNTRY" = _t, #"DESTINATION COUNTRY" = _t, #"OD Pair" = _t, #"TRANSIT TIME REQUIREMENT (HRS)" = _t, CURRENCY = _t, #"AIRFREIGHT MIN" = _t, #"<500KG" = _t, #"+500KG" = _t, #"+1000KG" = _t, #"FSC (PER KG)" = _t, #"SSC (PER KG)" = _t, #"Oversize Surcharge" = _t, #"Update Date" = _t, #"Update User" = _t, Validation_date = _t, count = _t, Comments = _t, #"+500KG Total" = _t, #"Merged OD Lane Pairs" = _t, #"<100KG" = _t, #"Adding datetime stamp" = _t, #"Extract day from datetimestamp" = _t, #"Extract year of datetime stamp" = _t]),
+    #"Appended merge_MXUS_Rate" = Table.Combine({Source, merge_MXUS_Rate}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Appended merge_MXUS_Rate",{{"DSV Lane ID", type text}, {"Key_column", type text}, {"SERVICE", type text}, {"ORIGIN REGION", type text}, {"ORIGIN COUNTRY", type text}, {"DESTINATION COUNTRY", type text}, {"OD Pair", type text}, {"TRANSIT TIME REQUIREMENT (HRS)", type text}, {"CURRENCY", type text}, {"AIRFREIGHT MIN", type text}, {"<500KG", type text}, {"+500KG", type text}, {"+1000KG", type text}, {"FSC (PER KG)", type text}, {"SSC (PER KG)", type text}, {"Oversize Surcharge", type text}, {"Update Date", type text}, {"Update User", type text}, {"Validation_date", type text}, {"count", type text}, {"Comments", type text}, {"+500KG Total", type text}, {"Merged OD Lane Pairs", type text}, {"<100KG", type text}, {"Adding datetime stamp", type text}, {"Extract day from datetimestamp", type text}, {"Extract year of datetime stamp", type text}}),
+    #"Added Key_column_2" = Table.AddColumn(#"Changed Type", "Key_column_2", each [DSV Lane ID] & [Update Date]),
+    #"Changed DSV Lane ID" = Table.TransformColumnTypes(#"Added Key_column_2",{{"DSV Lane ID", type text}}),
+    #"Changed Update Date" = Table.TransformColumnTypes(#"Changed DSV Lane ID",{{"Update Date", type text}}),
+    #"Changed Key_column" = Table.TransformColumnTypes(#"Changed Update Date",{{"Key_column", type text}, {"Key_column_2", type text}}),
+    #"Grouped DSV Lane ID" = Table.Group(#"Changed Key_column", {"DSV Lane ID"}, {{"Latest update date", each List.Max([Update Date]), type text}}),
+    #"Merged two columns" = Table.CombineColumns(#"Grouped DSV Lane ID",{"DSV Lane ID", "Latest update date"},Combiner.CombineTextByDelimiter("", QuoteStyle.None),"Merged"),
+    #"Added Index" = Table.AddColumn(#"Merged two columns", "Index Column", each 1),
+    Merged_data_sets = Table.Join(#"Added Index", "Merged",#"Changed Key_column", "Key_column_2"),
+    #"Changed SERVICE" = Table.TransformColumnTypes(Merged_data_sets,{{"SERVICE", type text}}),
+    #"Added final_filter" = Table.AddColumn(#"Changed SERVICE", "final_filter", each [SERVICE] & [Key_column_2]),
+    #"Changed final_filter" = Table.TransformColumnTypes(#"Added final_filter",{{"final_filter", type text}}),
+    #"Removed Duplicates final_filter" = Table.Distinct(#"Changed final_filter", {"final_filter"}),
+    #"Removed unneeded columns" = Table.RemoveColumns(#"Removed Duplicates final_filter",{"Index Column", "Key_column", "Key_column_2", "final_filter"})
+in
+    #"Removed unneeded columns"
