@@ -1,0 +1,397 @@
+Error output sheet
+let
+    Source = #"DSV Shipment Report",
+    // Group by "Blank check RefNums (SCN)" where "BooleanColumn" is true
+    GroupedTable = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable = Table.SelectRows(GroupedTable, each [GroupedData][#"Blank check RefNums (SCN)"]{0} = true),
+    #"Expanded GroupedData" = Table.ExpandTableColumn(FilteredTable, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type" = Table.AddColumn(#"Expanded GroupedData", "Error", each "Blank check RefNums (SCN)"),
+    #"Removed Columns" = Table.RemoveColumns(#"Added error type",{"GroupedData.BooleanColumn"}),
+
+    // Group by "Blank check RefNums (INO)" where "BooleanColumn" is true
+    GroupedTable2 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable2 = Table.SelectRows(GroupedTable2, each [GroupedData][#"Blank check RefNums (INO)"]{0} = true),
+    #"Expanded GroupedData2" = Table.ExpandTableColumn(FilteredTable2, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 2" = Table.AddColumn(#"Expanded GroupedData2", "Error", each "Blank check RefNums (INO)"),
+    #"Removed Columns2" = Table.RemoveColumns(#"Added error type 2",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 1 "Blank check RefNums (SCN)" and "Blank check RefNums (INO)"
+    #"Appended" = Table.Combine({#"Removed Columns", #"Removed Columns2"}),
+
+    // Group by "Blank check RefNums (LAI)" where "BooleanColumn" is true
+    GroupedTable3 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable3 = Table.SelectRows(GroupedTable3, each [GroupedData][#"Blank check RefNums (LAI)"]{0} = true),
+    #"Expanded GroupedData3" = Table.ExpandTableColumn(FilteredTable2, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 3" = Table.AddColumn(#"Expanded GroupedData3", "Error", each "Blank check RefNums (LAI)"),
+    #"Removed Columns3" = Table.RemoveColumns(#"Added error type 3",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 2 "Blank check RefNums (LAI)"
+    #"Appended2" = Table.Combine({#"Appended", #"Removed Columns3"}),
+
+        // Group by "Blank check RefNums (SRF)" where "BooleanColumn" is true
+    GroupedTable4 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable4 = Table.SelectRows(GroupedTable4, each [GroupedData][#"Blank check RefNums (SRF)"]{0} = true),
+    #"Expanded GroupedData4" = Table.ExpandTableColumn(FilteredTable4, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 4" = Table.AddColumn(#"Expanded GroupedData4", "Error", each "Blank check RefNums (SRF)"),
+    #"Removed Columns4" = Table.RemoveColumns(#"Added error type 4",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 3 "Blank check RefNums (SRF)"
+    #"Appended3" = Table.Combine({#"Appended2", #"Removed Columns4"}),
+
+    // Group by "Blank check Destination GSDB Code" where "BooleanColumn" is true
+    GroupedTable5 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable5 = Table.SelectRows(GroupedTable5, each [GroupedData][#"Blank check Destination GSDB Code"]{0} = true),
+    #"Expanded GroupedData5" = Table.ExpandTableColumn(FilteredTable5, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 5" = Table.AddColumn(#"Expanded GroupedData5", "Error", each "Blank check Destination GSDB Code"),
+    #"Removed Columns5" = Table.RemoveColumns(#"Added error type 5",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 4 "Blank check Destination GSDB Code"
+    #"Appended4" = Table.Combine({#"Appended3", #"Removed Columns5"}),
+
+    // Group by "Blank check RefNums (INO)" where "BooleanColumn" is true
+    GroupedTable6 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable6 = Table.SelectRows(GroupedTable6, each [GroupedData][#"Blank check First SEA Leg ATD"]{0} = true),
+    #"Expanded GroupedData6" = Table.ExpandTableColumn(FilteredTable6, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 6" = Table.AddColumn(#"Expanded GroupedData6", "Error", each "Blank check First SEA Leg ATD"),
+    #"Removed Columns6" = Table.RemoveColumns(#"Added error type 6",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 5 Blank check First SEA Leg ATD
+    #"Appended5" = Table.Combine({#"Appended3", #"Removed Columns6"}),
+
+    // Group by "Blank check ETD Load(ARV - LEG)" where "BooleanColumn" is true
+    GroupedTable7 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable7 = Table.SelectRows(GroupedTable7, each [GroupedData][#"Blank check ETD Load(ARV - LEG)"]{0} = true),
+    #"Expanded GroupedData7" = Table.ExpandTableColumn(FilteredTable7, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 7" = Table.AddColumn(#"Expanded GroupedData7", "Error", each "Blank check ETD Load(ARV - LEG)"),
+    #"Removed Columns7" = Table.RemoveColumns(#"Added error type 7",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 6 Blank check ETD Load(ARV - LEG)
+    #"Appended6" = Table.Combine({#"Appended5", #"Removed Columns7"}),
+
+    // Group by "Blank check Shipment Origin ETD" where "BooleanColumn" is true
+    GroupedTable8 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable8 = Table.SelectRows(GroupedTable8, each [GroupedData][#"Blank check Shipment Origin ETD"]{0} = true),
+    #"Expanded GroupedData8" = Table.ExpandTableColumn(FilteredTable8, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 8" = Table.AddColumn(#"Expanded GroupedData8", "Error", each "Blank check Shipment Origin ETD"),
+    #"Removed Columns8" = Table.RemoveColumns(#"Added error type 8",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 7 Blank check Shipment Origin ETD
+    #"Appended7" = Table.Combine({#"Appended6", #"Removed Columns8"}),
+
+    // Group by "Blank check Job Opened" where "BooleanColumn" is true
+    GroupedTable9 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable9 = Table.SelectRows(GroupedTable9, each [GroupedData][#"Blank check Job Opened"]{0} = true),
+    #"Expanded GroupedData9" = Table.ExpandTableColumn(FilteredTable9, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 9" = Table.AddColumn(#"Expanded GroupedData9", "Error", each "Blank check Job Opened"),
+    #"Removed Columns9" = Table.RemoveColumns(#"Added error type 9",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 8 Blank check Job Opened
+    #"Appended8" = Table.Combine({#"Appended7", #"Removed Columns9"}),
+
+
+    // Group by "Blank check Containers" where "BooleanColumn" is true
+    GroupedTable10 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable10 = Table.SelectRows(GroupedTable10, each [GroupedData][#"Blank check Containers"]{0} = true),
+    #"Expanded GroupedData10" = Table.ExpandTableColumn(FilteredTable10, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 10" = Table.AddColumn(#"Expanded GroupedData10", "Error", each "Blank check Containers"),
+    #"Removed Columns10" = Table.RemoveColumns(#"Added error type 10",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 9 Blank check Containers
+    #"Appended9" = Table.Combine({#"Appended8", #"Removed Columns10"}),
+
+    // Group by "Blank check FMC Reference" where "BooleanColumn" is true
+    GroupedTable11 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable11 = Table.SelectRows(GroupedTable11, each [GroupedData][#"Blank check FMC Reference"]{0} = true),
+    #"Expanded GroupedData11" = Table.ExpandTableColumn(FilteredTable11, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 11" = Table.AddColumn(#"Expanded GroupedData11", "Error", each "Blank check FMC Reference"),
+    #"Removed Columns11" = Table.RemoveColumns(#"Added error type 11",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 10 Blank check FMC Reference
+    #"Appended10" = Table.Combine({#"Appended9", #"Removed Columns11"}),
+
+    // Group by "Blank check Job Status" where "BooleanColumn" is true
+    GroupedTable12 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable12 = Table.SelectRows(GroupedTable12, each [GroupedData][#"Blank check Job Status"]{0} = true),
+    #"Expanded GroupedData12" = Table.ExpandTableColumn(FilteredTable12, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 12" = Table.AddColumn(#"Expanded GroupedData12", "Error", each "Blank check Job Status"),
+    #"Removed Columns12" = Table.RemoveColumns(#"Added error type 12",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 11 Blank check Job Status
+    #"Appended11" = Table.Combine({#"Appended10", #"Removed Columns12"}),
+
+    // Group by "Blank check Vessel (ARV - LEG)" where "BooleanColumn" is true
+    GroupedTable13 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable13 = Table.SelectRows(GroupedTable13, each [GroupedData][#"Blank check Vessel (ARV - LEG)"]{0} = true),
+    #"Expanded GroupedData13" = Table.ExpandTableColumn(FilteredTable13, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 13" = Table.AddColumn(#"Expanded GroupedData13", "Error", each "Blank check Vessel (ARV - LEG)"),
+    #"Removed Columns13" = Table.RemoveColumns(#"Added error type 13",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 12 Blank check Vessel (ARV - LEG)
+    #"Appended12" = Table.Combine({#"Appended11", #"Removed Columns13"}),
+
+    // Group by "Blank check UQ_1" where "BooleanColumn" is true
+    GroupedTable14 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable14 = Table.SelectRows(GroupedTable14, each [GroupedData][#"Blank check UQ_1"]{0} = true),
+    #"Expanded GroupedData14" = Table.ExpandTableColumn(FilteredTable14, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 14" = Table.AddColumn(#"Expanded GroupedData14", "Error", each "Blank check UQ_1"),
+    #"Removed Columns14" = Table.RemoveColumns(#"Added error type 14",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 13 Blank check UQ_1
+    #"Appended13" = Table.Combine({#"Appended12", #"Removed Columns14"}),
+
+    // Group by "Blank check Load(ARV - LEG)" where "BooleanColumn" is true
+    GroupedTable15 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable15 = Table.SelectRows(GroupedTable15, each [GroupedData][#"Blank check Load(ARV - LEG)"]{0} = true),
+    #"Expanded GroupedData15" = Table.ExpandTableColumn(FilteredTable15, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 15" = Table.AddColumn(#"Expanded GroupedData15", "Error", each "Blank check Load(ARV - LEG)"),
+    #"Removed Columns15" = Table.RemoveColumns(#"Added error type 15",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 14 Blank check Load(ARV - LEG)
+    #"Appended14" = Table.Combine({#"Appended13", #"Removed Columns15"}),
+
+    // Group by "Blank check Carrier Name" where "BooleanColumn" is true
+    GroupedTable16 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable16 = Table.SelectRows(GroupedTable16, each [GroupedData][#"Blank check Carrier Name"]{0} = true),
+    #"Expanded GroupedData16" = Table.ExpandTableColumn(FilteredTable16, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 16" = Table.AddColumn(#"Expanded GroupedData16", "Error", each "Blank check Carrier Name"),
+    #"Removed Columns16" = Table.RemoveColumns(#"Added error type 16",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 15 Blank check Carrier Name
+    #"Appended15" = Table.Combine({#"Appended14", #"Removed Columns16"}),
+
+    // Group by "Blank check Consignee Country" where "BooleanColumn" is true
+    GroupedTable17 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable17 = Table.SelectRows(GroupedTable17, each [GroupedData][#"Blank check Consignee Country"]{0} = true),
+    #"Expanded GroupedData17" = Table.ExpandTableColumn(FilteredTable17, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 17" = Table.AddColumn(#"Expanded GroupedData17", "Error", each "Blank check Consignee Country"),
+    #"Removed Columns17" = Table.RemoveColumns(#"Added error type 17",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 16 Blank check Consignee Country
+    #"Appended16" = Table.Combine({#"Appended15", #"Removed Columns17"}),
+
+    // Group by "Blank check Consignee Name" where "BooleanColumn" is true
+    GroupedTable18 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable18 = Table.SelectRows(GroupedTable18, each [GroupedData][#"Blank check Consignee Name"]{0} = true),
+    #"Expanded GroupedData18" = Table.ExpandTableColumn(FilteredTable18, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 18" = Table.AddColumn(#"Expanded GroupedData18", "Error", each "Blank check Consignee Name"),
+    #"Removed Columns18" = Table.RemoveColumns(#"Added error type 18",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 17 Blank check Consignee Name
+    #"Appended17" = Table.Combine({#"Appended16", #"Removed Columns18"}),
+
+    // Group by "Blank check Consignor Country" where "BooleanColumn" is true
+    GroupedTable19 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable19 = Table.SelectRows(GroupedTable19, each [GroupedData][#"Blank check Consignor Country"]{0} = true),
+    #"Expanded GroupedData19" = Table.ExpandTableColumn(FilteredTable19, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 19" = Table.AddColumn(#"Expanded GroupedData19", "Error", each "Blank check Consignor Country"),
+    #"Removed Columns19" = Table.RemoveColumns(#"Added error type 19",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 18 Blank check Consignor Country
+    #"Appended18" = Table.Combine({#"Appended17", #"Removed Columns19"}),
+
+    // Group by "Blank check Consignor Country" where "BooleanColumn" is true
+    GroupedTable20 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable20 = Table.SelectRows(GroupedTable20, each [GroupedData][#"Blank check Consignor Country"]{0} = true),
+    #"Expanded GroupedData20" = Table.ExpandTableColumn(FilteredTable20, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 20" = Table.AddColumn(#"Expanded GroupedData20", "Error", each "Blank check Consignor Country"),
+    #"Removed Columns20" = Table.RemoveColumns(#"Added error type 20",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 19 Blank check Consignor Country
+    #"Appended19" = Table.Combine({#"Appended18", #"Removed Columns20"}),
+
+    // Group by "Blank check Consignor Name" where "BooleanColumn" is true
+    GroupedTable21 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable21 = Table.SelectRows(GroupedTable21, each [GroupedData][#"Blank check Consignor Name"]{0} = true),
+    #"Expanded GroupedData21" = Table.ExpandTableColumn(FilteredTable21, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 21" = Table.AddColumn(#"Expanded GroupedData21", "Error", each "Blank check Consignor Name"),
+    #"Removed Columns21" = Table.RemoveColumns(#"Added error type 21",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 20 Blank check Consignor Name
+    #"Appended20" = Table.Combine({#"Appended19", #"Removed Columns21"}),
+
+    // Group by "Blank check Actual Pickup (Date Only)" where "BooleanColumn" is true
+    GroupedTable22 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable22 = Table.SelectRows(GroupedTable22, each [GroupedData][#"Blank check Actual Pickup (Date Only)"]{0} = true),
+    #"Expanded GroupedData22" = Table.ExpandTableColumn(FilteredTable22, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 22" = Table.AddColumn(#"Expanded GroupedData22", "Error", each "Blank check Actual Pickup (Date Only)"),
+    #"Removed Columns22" = Table.RemoveColumns(#"Added error type 22",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 21 Blank check Actual Pickup (Date Only)
+    #"Appended21" = Table.Combine({#"Appended20", #"Removed Columns22"}),
+
+    // Group by "Blank check Chargeable" where "BooleanColumn" is true
+    GroupedTable23 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable23 = Table.SelectRows(GroupedTable23, each [GroupedData][#"Blank check Chargeable"]{0} = true),
+    #"Expanded GroupedData23" = Table.ExpandTableColumn(FilteredTable23, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 23" = Table.AddColumn(#"Expanded GroupedData23", "Error", each "Blank check Chargeable"),
+    #"Removed Columns23" = Table.RemoveColumns(#"Added error type 23",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 22 Blank check Chargeable
+    #"Appended22" = Table.Combine({#"Appended21", #"Removed Columns23"}),
+
+    // Group by "Blank check UQ_2" where "BooleanColumn" is true
+    GroupedTable24 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable24 = Table.SelectRows(GroupedTable24, each [GroupedData][#"Blank check UQ_2"]{0} = true),
+    #"Expanded GroupedData24" = Table.ExpandTableColumn(FilteredTable24, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 24" = Table.AddColumn(#"Expanded GroupedData24", "Error", each "Blank check UQ_2"),
+    #"Removed Columns24" = Table.RemoveColumns(#"Added error type 24",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 23 Blank check UQ_2
+    #"Appended23" = Table.Combine({#"Appended22", #"Removed Columns24"}),
+
+    // Group by "Blank check Volume" where "BooleanColumn" is true
+    GroupedTable25 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable25 = Table.SelectRows(GroupedTable25, each [GroupedData][#"Blank check Volume"]{0} = true),
+    #"Expanded GroupedData25" = Table.ExpandTableColumn(FilteredTable25, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 25" = Table.AddColumn(#"Expanded GroupedData25", "Error", each "Blank check Volume"),
+    #"Removed Columns25" = Table.RemoveColumns(#"Added error type 25",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 24 Blank check Volume
+    #"Appended24" = Table.Combine({#"Appended23", #"Removed Columns25"}),
+
+    // Group by "Blank check UQ" where "BooleanColumn" is true
+    GroupedTable26 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable26 = Table.SelectRows(GroupedTable26, each [GroupedData][#"Blank check UQ"]{0} = true),
+    #"Expanded GroupedData26" = Table.ExpandTableColumn(FilteredTable26, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 26" = Table.AddColumn(#"Expanded GroupedData26", "Error", each "Blank check UQ"),
+    #"Removed Columns26" = Table.RemoveColumns(#"Added error type 26",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 25 Blank check UQ_2
+    #"Appended25" = Table.Combine({#"Appended24", #"Removed Columns26"}),
+
+    // Group by "Blank check Weight" where "BooleanColumn" is true
+    GroupedTable27 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable27 = Table.SelectRows(GroupedTable27, each [GroupedData][#"Blank check Weight"]{0} = true),
+    #"Expanded GroupedData27" = Table.ExpandTableColumn(FilteredTable27, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 27" = Table.AddColumn(#"Expanded GroupedData27", "Error", each "Blank check Weight"),
+    #"Removed Columns27" = Table.RemoveColumns(#"Added error type 27",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 26 Blank check Weight
+    #"Appended26" = Table.Combine({#"Appended25", #"Removed Columns27"}),
+
+    // Group by "Blank check INCO" where "BooleanColumn" is true
+    GroupedTable28 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable28 = Table.SelectRows(GroupedTable28, each [GroupedData][#"Blank check INCO"]{0} = true),
+    #"Expanded GroupedData28" = Table.ExpandTableColumn(FilteredTable28, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 28" = Table.AddColumn(#"Expanded GroupedData28", "Error", each "Blank check INCO"),
+    #"Removed Columns28" = Table.RemoveColumns(#"Added error type 28",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 27 Blank check INCO
+    #"Appended27" = Table.Combine({#"Appended26", #"Removed Columns28"}),
+
+    // Group by "Blank check Job Dept" where "BooleanColumn" is true
+    GroupedTable29 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable29 = Table.SelectRows(GroupedTable29, each [GroupedData][#"Blank check Job Dept"]{0} = true),
+    #"Expanded GroupedData29" = Table.ExpandTableColumn(FilteredTable29, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 29" = Table.AddColumn(#"Expanded GroupedData29", "Error", each "Blank check Job Dept"),
+    #"Removed Columns29" = Table.RemoveColumns(#"Added error type 29",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 28 Blank check Job Dept
+    #"Appended28" = Table.Combine({#"Appended27", #"Removed Columns29"}),
+
+    // Group by "Blank check Job Branch" where "BooleanColumn" is true
+    GroupedTable30 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable30 = Table.SelectRows(GroupedTable30, each [GroupedData][#"Blank check Job Branch"]{0} = true),
+    #"Expanded GroupedData30" = Table.ExpandTableColumn(FilteredTable30, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 30" = Table.AddColumn(#"Expanded GroupedData30", "Error", each "Blank check Job Branch"),
+    #"Removed Columns30" = Table.RemoveColumns(#"Added error type 30",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 29 Blank check Job Branch
+    #"Appended29" = Table.Combine({#"Appended28", #"Removed Columns30"}),
+
+    // Group by "Blank check Shipment Dest ETA" where "BooleanColumn" is true
+    GroupedTable31 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable31 = Table.SelectRows(GroupedTable31, each [GroupedData][#"Blank check Shipment Dest ETA"]{0} = true),
+    #"Expanded GroupedData31" = Table.ExpandTableColumn(FilteredTable31, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 31" = Table.AddColumn(#"Expanded GroupedData31", "Error", each "Blank check Shipment Dest ETA"),
+    #"Removed Columns31" = Table.RemoveColumns(#"Added error type 31",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 30 Blank check Shipment Dest ETA
+    #"Appended30" = Table.Combine({#"Appended29", #"Removed Columns31"}),
+
+    // Group by "Blank check Destination" where "BooleanColumn" is true
+    GroupedTable32 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable32 = Table.SelectRows(GroupedTable32, each [GroupedData][#"Blank check Destination"]{0} = true),
+    #"Expanded GroupedData32" = Table.ExpandTableColumn(FilteredTable32, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 32" = Table.AddColumn(#"Expanded GroupedData32", "Error", each "Blank check Destination"),
+    #"Removed Columns32" = Table.RemoveColumns(#"Added error type 32",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 31 Blank check Destination
+    #"Appended31" = Table.Combine({#"Appended30", #"Removed Columns32"}),
+
+    // Group by "Blank check Origin" where "BooleanColumn" is true
+    GroupedTable33 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable33 = Table.SelectRows(GroupedTable33, each [GroupedData][#"Blank check Origin"]{0} = true),
+    #"Expanded GroupedData33" = Table.ExpandTableColumn(FilteredTable33, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 33" = Table.AddColumn(#"Expanded GroupedData33", "Error", each "Blank check Origin"),
+    #"Removed Columns33" = Table.RemoveColumns(#"Added error type 33",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 32 Blank check Origin
+    #"Appended32" = Table.Combine({#"Appended31", #"Removed Columns33"}),
+
+    // Group by "Blank check Mode" where "BooleanColumn" is true
+    GroupedTable34 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable34 = Table.SelectRows(GroupedTable34, each [GroupedData][#"Blank check Mode"]{0} = true),
+    #"Expanded GroupedData34" = Table.ExpandTableColumn(FilteredTable34, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 34" = Table.AddColumn(#"Expanded GroupedData34", "Error", each "Blank check Mode"),
+    #"Removed Columns34" = Table.RemoveColumns(#"Added error type 34",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 33 Blank check Mode
+    #"Appended33" = Table.Combine({#"Appended32", #"Removed Columns34"}),
+
+    // Group by "Blank check Trans" where "BooleanColumn" is true
+    GroupedTable35 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable35 = Table.SelectRows(GroupedTable35, each [GroupedData][#"Blank check Trans"]{0} = true),
+    #"Expanded GroupedData35" = Table.ExpandTableColumn(FilteredTable35, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 35" = Table.AddColumn(#"Expanded GroupedData35", "Error", each "Blank check Trans"),
+    #"Removed Columns35" = Table.RemoveColumns(#"Added error type 35",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 34 Blank check Trans
+    #"Appended34" = Table.Combine({#"Appended33", #"Removed Columns35"}),
+
+    // Group by "Blank check House Ref" where "BooleanColumn" is true
+    GroupedTable36 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable36 = Table.SelectRows(GroupedTable36, each [GroupedData][#"Blank check House Ref"]{0} = true),
+    #"Expanded GroupedData36" = Table.ExpandTableColumn(FilteredTable36, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 36" = Table.AddColumn(#"Expanded GroupedData36", "Error", each "Blank check House Ref"),
+    #"Removed Columns36" = Table.RemoveColumns(#"Added error type 36",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 35 Blank check House Ref
+    #"Appended35" = Table.Combine({#"Appended34", #"Removed Columns36"}),
+
+    // Group by "Blank check Shipment ID" where "BooleanColumn" is true
+    GroupedTable37 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable37 = Table.SelectRows(GroupedTable37, each [GroupedData][#"Blank check Shipment ID"]{0} = true),
+    #"Expanded GroupedData37" = Table.ExpandTableColumn(FilteredTable37, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 37" = Table.AddColumn(#"Expanded GroupedData37", "Error", each "Blank check Shipment ID"),
+    #"Removed Columns37" = Table.RemoveColumns(#"Added error type 37",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 36 Blank check Shipment ID
+    #"Appended36" = Table.Combine({#"Appended35", #"Removed Columns37"}),
+
+    //test adding in GSDB check
+    // Group by "Lane and GSDB check" where "BooleanColumn" is true
+    GroupedTable38 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable38 = Table.SelectRows(GroupedTable38, each [GroupedData][#"Lane and GSDB check"]{0} <> "Lane ID info correct"),
+    #"Expanded GroupedData38" = Table.ExpandTableColumn(FilteredTable38, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 38" = Table.AddColumn(#"Expanded GroupedData38", "Error", each "Lane and GSDB check"),
+    #"Removed Columns38" = Table.RemoveColumns(#"Added error type 38",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 37 Lane and GSDB check
+    #"Appended37" = Table.Combine({#"Appended36", #"Removed Columns38"}),
+
+    
+    #"Appened all groupby" = Table.AddColumn(#"Appended37", "Count", each 1),
+    #"Sorted Rows" = Table.Sort(#"Appened all groupby",{{"Shipment ID", Order.Ascending}})
+in
+    #"Sorted Rows"
+
+Error output summery
+let
+    Source = #"Error output sheet",
+    #"Grouped Rows" = Table.Group(Source, {"Error"}, {{"Error count", each List.Sum([Count]), type number}})
+in
+    #"Grouped Rows"
+
+
