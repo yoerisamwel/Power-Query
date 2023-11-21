@@ -6,3 +6,8 @@ While working at DSV I found that ofthen I worked with various teams without tea
 An added advantage is that with Sharepoint and Power automate the logic in the scripts can be automated on a basic lavel allowing team memmbers to receive run reports with the analysis/data they need.
 
 I am using the repository to store the M-Code allowing me to easily read back on code I have written in the past as I am a big copy paster. 
+
+The routing guide was a project to automate a cumbersome pricing/routing excel file is used between teams
+
+The error sheets are sheet where I identified error in the input data and processed it so it would be presented in the folling format:
+responcible location/operator/shipment/error. I found the original way of presenting the high level amound of errors made resolving the errors for the operators very cumbersome and they dragged their feed because of it. In this format it is easier to identify the errors and the shipments they are on and have the responcible operators correct them. We also tied these to KPI's for the operators. 
