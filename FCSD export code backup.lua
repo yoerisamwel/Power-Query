@@ -470,7 +470,7 @@ let
     // Group by "Lane and GSDB check" where "BooleanColumn" is true
     GroupedTable38 = Table.Group(Source, {"Shipment ID"}, {{"GroupedData", each _, type table [#"Shipment ID"=nullable any, BooleanColumn=nullable logical]}}),
     // Filter out groups where "BooleanColumn" is not true
-    FilteredTable38 = Table.SelectRows(GroupedTable38, each [GroupedData][#"Lane and GSDB check"]{0} <> "Lane ID info correct"),
+    FilteredTable38 = Table.SelectRows(GroupedTable38, each [GroupedData][#"Lane and GSDB error"]{0} <> "Lane ID info correct"),
     #"Expanded GroupedData38" = Table.ExpandTableColumn(FilteredTable38, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
     #"Added error type 38" = Table.AddColumn(#"Expanded GroupedData38", "Error", each "Lane and GSDB check"),
     #"Removed Columns38" = Table.RemoveColumns(#"Added error type 38",{"GroupedData.BooleanColumn"}),
@@ -509,3 +509,13 @@ let
     #"Added validation column" = Table.AddColumn(#"Changed merge_key", "Dest_GSDB_valid", each true)
 in
     #"Added validation column"
+
+Lane ID check
+
+let
+    Source = #"DSV Shipment Report",
+    #"Filtered GSDB errors" = Table.SelectRows(Source, each ([Lane and GSDB check] = "Destination GSDB error")),
+    #"Merged Queries" = Table.NestedJoin(#"Filtered GSDB errors", {"Lane_check_table.LANE ID"}, Combinations_CW1_codes, {"Lane ID"}, "Combinations_CW1_codes", JoinKind.LeftOuter),
+    #"Expanded Combinations_CW1_codes" = Table.ExpandTableColumn(#"Merged Queries", "Combinations_CW1_codes", {"Lane ID"}, {"Combinations_CW1_codes.Lane ID"})
+in
+    #"Expanded Combinations_CW1_codes"
