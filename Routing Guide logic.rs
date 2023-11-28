@@ -130,3 +130,250 @@ let
     "State/Prov/terr", "NAME OF CARRIER'S SERVICE","MARKUS CMMS TIME", "TOTAL DAYS CMMS (TRIM)", "MARKUS SF", "SHIP FREQUENCY (TRIM)","MARKUS DIGIT DAY", "1 DIGIT DAY (TRIM)"})
 in
     #"Reordered Columns"
+
+milestone_feed tab
+let
+    Source = master_old_data,
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"2346", type text}}),
+    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"MODE", "mmode"}, {"SUPPLIER GSDB", "supplier_cd"}, {"PLANT GSDB", "plant_cd"}, {"COMMODITY", "commodity"}, {"SHIP FREQUENCY", "ship_freq,"}, {"FORD ROUTE ID", "route_id,"}, {"TOTAL DAYS ROUTE GUIDE", "total_transit,"}, {"DAYS AOP TO OTB", "aop_otb,"}, {"DAYS OTB TO ADP", "otb_adp,"}, {"DAYS ADP TO TLD", "adp_tld,"}, {"START EFFECTIVE YEAR", "trash1"}, {"START EFFECTIVE MONTH", "trash2"}, {"START EFFECTIVE DAY", "trash3"}, {"END EFFECTIVE YEAR", "trash4"}, {"END EFFECTIVE MONTH", "trash5"}, {"END EFFECTIVE DAY", "trash6"}, {"TDI MODE", "Mode"}, {"DIRECTION", "Direction"}, {"ADDITIONAL CMMS EXCEPTION TRANSIT", "Exception_Total"}, {"EXCEPTION TRANSIT REASON", "Exception_Reason"}, {"MODE TO PORT", "CarrierA_SFS_Mode"}, {"CONSOLIDATOR GSDB", "Consol_cd"}, {"SSL GSDB", "SSL_GSDB6"}, {"SSL SCAC", "CarrierA_TLD_SCAC"}, {"SSL CONTRACT NUMBER", "Contract_Number"}, {"% OF BUSINESS WITH SSL", "SSL_Pickup_cd"}, {"SSL PICK UP LOAD TYPE", "SSL_Pickup_Type"}, {"MODE FROM PORT", "CarrierA_TLD_Mode"}, {"SSL DROP OFF UNLOAD TYPE", "Delivery_Type"}, {"SSL DROP OFF LOC", "SSL_DropOff_GSDB"}, {"PRIORITY", "Priority"}, {"TOTAL DAYS CMMS", "cmms_transit,"}, {"NEW PORT CODE", "Origin_Port"}}),
+    //rounded off the float int he column
+    #"Rounded Off cmms_transit," = Table.TransformColumns(#"Renamed Columns",{{"cmms_transit,", each Number.Round(_, 0), Int64.Type}}),
+    // merged in the code sheet
+    #"Merged Queries" = Table.NestedJoin(#"Rounded Off cmms_transit,", {"mmode"}, Codes, {"Code"}, "Codes", JoinKind.LeftOuter),
+    #"Expanded Codes" = Table.ExpandTableColumn(#"Merged Queries", "Codes", {"Export", "Import"}, {"Codes.Export", "Codes.Import"}),
+    #"Renamed load_type columns" = Table.RenameColumns(#"Expanded Codes",{{"Codes.Export", "Origin_Load_Type"}, {"Codes.Import", "Destn_Load_Type"}}),
+    //rewrote the excel formulas used in the routingguide
+    #"Added sfs_acc," = Table.AddColumn(#"Renamed load_type columns", "sfs_acc,", each if [Origin_Load_Type] = "LCL" then [#"DAYS SFS TO ACC (LCL)"] else 999),
+    #"Added acc_dcc," = Table.AddColumn(#"Added sfs_acc,", "acc_dcc,", each if [Origin_Load_Type] = "LCL" then [#"DAYS ACC TO DCC (LCL)"] else 999),
+    #"Added tld_adc," = Table.AddColumn(#"Added acc_dcc,", "tld_adc,", each if [Destn_Load_Type] = "LCL" then [#"DAYS TLD TO ADC (LCL)"] else "999"),
+    #"Added adc_ddc," = Table.AddColumn(#"Added tld_adc,", "adc_ddc,", each if [Destn_Load_Type] = "LCL" then [#"DAYS ADC TO DDC (LCL)"] else "999"),
+    #"Added dcc_aop," = Table.AddColumn(#"Added adc_ddc,", "dcc_aop,", each if [Origin_Load_Type] = "LCL" then [#"DAYS DCC TO AOP (LCL)"] else [#"DAYS SFS TO AOP (FCL)"]),
+    #"Added ddc_dpl," = Table.AddColumn(#"Added dcc_aop,", "ddc_dpl,", each if [Destn_Load_Type] = "LCL" then [#"DAYS DDC TO DPL (LCL)"] else [#"DAYS TLD TO DPL (FCL)"]),
+    //used nested if statements to recreate an excel or operator
+    #"Added DeConsol_cd" = Table.AddColumn(#"Added ddc_dpl,", "DeConsol_cd", each if [DECONSOLIDATOR] = " " then " " else if [DECONSOLIDATOR] = "FCL" then " " else if [DECONSOLIDATOR] = 0 then " " else if [DECONSOLIDATOR] = "NA" then " " else [DECONSOLIDATOR]),
+    #"Added CarrierA_DDC_SCAC" = Table.AddColumn(#"Added DeConsol_cd", "CarrierA_DDC_SCAC", each if [DECON TO PLT CARRIER SCAC] = " " then " " else if [DECON TO PLT CARRIER SCAC] = "FCL" then " " else if [DECONSOLIDATOR] = 0 then " " else if [DECON TO PLT CARRIER SCAC] = "NA" then " " else [DECON TO PLT CARRIER SCAC]),
+    #"Added CarrierA_DDC_GSDB6" = Table.AddColumn(#"Added CarrierA_DDC_SCAC", "CarrierA_DDC_GSDB6", each if [POST DECONSOL STOP] = " " then " " else if [POST DECONSOL STOP] = "FCL" then " " else if [POST DECONSOL STOP] = 0 then " " else if [POST DECONSOL STOP] = "NA" then " " else [POST DECONSOL STOP]),
+    #"Added Dock_Code" = Table.AddColumn(#"Added CarrierA_DDC_GSDB6", "Dock_Code", each if [DOCK CODE] = "NA" then " " else if [DOCK CODE] = 0 then " " else [DOCK CODE]),
+    #"Added Alternate_ShipTo" = Table.AddColumn(#"Added Dock_Code", "Alternate_ShipTo", each if [ALTCONSIGNEE] = " " then " " else if [ALTCONSIGNEE] = "NA"  then " " else if [ALTCONSIGNEE] = 0 then " " else [ALTCONSIGNEE]),
+    #"Added Payment_Terms" = Table.AddColumn(#"Added Alternate_ShipTo", "Payment_Terms", each [PAYMENT TERMS]),
+    //slicing the values in the provided columns
+    #"Extracted First Characters Payment_Terms" = Table.TransformColumns(#"Added Payment_Terms", {{"Payment_Terms", each Text.Start(Text.From(_, "en-US"), 3), type text}}),
+    #"Added LoadYd_Cutoff_Time" = Table.AddColumn(#"Extracted First Characters Payment_Terms", "LoadYd_Cutoff_Time", each if [#"LOAD YARD CUT-OFF"] = 0 then " " else [#"LOAD YARD CUT-OFF"]),
+    #"Inserted Last Characters LoadYd_Cutoff_Time" = Table.AddColumn(#"Added LoadYd_Cutoff_Time", "Last Characters", each Text.End([LoadYd_Cutoff_Time], 4), type text),
+    #"Inserted Last Characters Origin_Port" = Table.AddColumn(#"Inserted Last Characters LoadYd_Cutoff_Time", "Last Characters.1", each Text.End([Origin_Port], 3), type text),
+    #"Added Destn_Port" = Table.AddColumn(#"Inserted Last Characters Origin_Port", "Destn_Port", each [Origin_Port]),
+    #"Inserted Last Characters" = Table.AddColumn(#"Added Destn_Port", "Last Characters.2", each Text.End([Destn_Port], 3), type text),
+    //added in the event day from the days table (replaced the vlookups in the sheet)
+    #"First Characters LOAD YARD CUT-OFF" = Table.TransformColumns(#"Inserted Last Characters", {{"LOAD YARD CUT-OFF", each Text.Start(_, 3), type text}}),
+    #"Merged LoadYd_Cutoff_Day" = Table.NestedJoin(#"First Characters LOAD YARD CUT-OFF", {"LOAD YARD CUT-OFF"}, days, {"Day"}, "days", JoinKind.LeftOuter),
+    #"Renamed LoadYd_Cutoff_Day" = Table.RenameColumns(#"Merged LoadYd_Cutoff_Day",{{"days", "LoadYd_Cutoff_Day"}}),
+    #"Expanded LoadYd_Cutoff_Day" = Table.ExpandTableColumn(#"Renamed LoadYd_Cutoff_Day", "LoadYd_Cutoff_Day", {"Letter"}, {"LoadYd_Cutoff_Day.Letter"}),
+    #"Extracted First Characters" = Table.TransformColumns(#"Expanded LoadYd_Cutoff_Day", {{"LoadYd_Cutoff_Day.Letter", each Text.Start(_, 2), type text}}),
+    #"Renamed Columns LoadYd_Cutoff_Day" = Table.RenameColumns(#"Extracted First Characters",{{"LoadYd_Cutoff_Day.Letter", "LoadYd_Cutoff_Day"}}),
+    #"Added PORT CUT OFF COPY" = Table.AddColumn(#"Renamed Columns LoadYd_Cutoff_Day", "PORT CUT OFF COPY", each [PORT CUT OFF]),
+    #"First Characters PORT CUT OFF" = Table.TransformColumns(#"Added PORT CUT OFF COPY", {{"PORT CUT OFF", each Text.Start(_, 3), type text}}),
+    #"Merged Port_Cutoff_Day" = Table.NestedJoin(#"First Characters PORT CUT OFF", {"PORT CUT OFF"}, days, {"Day"}, "days", JoinKind.LeftOuter),
+    #"Expanded days" = Table.ExpandTableColumn(#"Merged Port_Cutoff_Day", "days", {"numeric"}, {"days.numeric"}),
+    #"Renamed Port_Cutoff_Time" = Table.RenameColumns(#"Expanded days",{{"days.numeric", "Port_Cutoff_Time"}}),
+    #"First Characters ESTIMATED SA DAY" = Table.TransformColumns(#"Renamed Port_Cutoff_Time", {{"ESTIMATED SA DAY", each Text.Start(_, 3), type text}}),
+    #"Merged Est_Sail_Day" = Table.NestedJoin(#"First Characters ESTIMATED SA DAY", {"ESTIMATED SA DAY"}, days, {"Day"}, "days.1", JoinKind.LeftOuter),
+    #"Expanded Est_Sail_Day" = Table.ExpandTableColumn(#"Merged Est_Sail_Day", "days.1", {"numeric"}, {"days.1.numeric"}),
+    #"Renamed Est_Sail_Day" = Table.RenameColumns(#"Expanded Est_Sail_Day",{{"days.1.numeric", "Est_Sail_Day"}}),
+    #"First Characters ESTIMATED AR DAY" = Table.TransformColumns(#"Renamed Est_Sail_Day", {{"ESTIMATED AR DAY", each Text.Start(_, 3), type text}}),
+    #"Merged Est_Arr_Day_Dest_Port" = Table.NestedJoin(#"First Characters ESTIMATED AR DAY", {"ESTIMATED AR DAY"}, days, {"Day"}, "days", JoinKind.LeftOuter),
+    #"Expanded Est_Arr_Day_Dest_Port" = Table.ExpandTableColumn(#"Merged Est_Arr_Day_Dest_Port", "days", {"numeric"}, {"days.numeric"}),
+    #"First Characters Est_Arr_Day_Dest_Port" = Table.TransformColumns(#"Expanded Est_Arr_Day_Dest_Port", {{"days.numeric", each Text.Start(_, 2), type text}}),
+    #"Renamed Est_Arr_Day_Dest_Port" = Table.RenameColumns(#"First Characters Est_Arr_Day_Dest_Port",{{"days.numeric", "Est_Arr_Day_Dest_Port"}}),
+    #"Merged port_cutoff" = Table.NestedJoin(#"Renamed Est_Arr_Day_Dest_Port", {"PORT CUT OFF"}, days, {"Day"}, "days", JoinKind.LeftOuter),
+    #"Expanded port_cutoff" = Table.ExpandTableColumn(#"Merged port_cutoff", "days", {"numeric"}, {"days.numeric"}),
+    #"Renamed port_cutoff" = Table.RenameColumns(#"Expanded port_cutoff",{{"days.numeric", "port_cutoff"}}),
+    #"First Characters port_cutoff" = Table.TransformColumns(#"Renamed port_cutoff", {{"port_cutoff", each Text.Start(_, 2), type text}}),
+    //recreated frequency day logic as used in the routing guide
+    #"Added Frequency_Day" = Table.AddColumn(#"First Characters port_cutoff", "Frequency_Day ", each if ([#"ship_freq,"] = 31) or ([#"ship_freq,"] = 32) or ([#"ship_freq,"] = 41) then [#"ship_freq,"] 
+    else if [#"ship_freq,"] = 21 then 1 else if [#"ship_freq,"] = 19 then 6 
+    else if [#"ship_freq,"] = 22 then 2 else if [#"ship_freq,"] = 23 then 3 
+    else if [#"ship_freq,"] = 24 then 4 else if [#"ship_freq,"] = 25 then 5 else 8),
+    #"Added Export_Total" = Table.AddColumn(#"Added Frequency_Day", "Export_Total", each 
+    if [Origin_Load_Type] = "LCL" then ([#"DAYS SFS TO ACC (LCL)"] + [#"DAYS ACC TO DCC (LCL)"] + [#"DAYS DCC TO AOP (LCL)"] + [#"aop_otb,"]) else ([#"DAYS SFS TO AOP (FCL)"] + [#"aop_otb,"])),
+    #"Added Import_Total" = Table.AddColumn(#"Added Export_Total", "Import_Total", each if [Destn_Load_Type] = "LCL" then ([#"adp_tld,"] + [#"DAYS TLD TO ADC (LCL)"] + [#"DAYS ADC TO DDC (LCL)"] + [#"DAYS DDC TO DPL (LCL)"]) else ([#"adp_tld,"] + [#"DAYS TLD TO DPL (FCL)"])),
+    #"Added CarrierA_SFS_SCAC" = Table.AddColumn(#"Added Import_Total", "CarrierA_SFS_SCAC", each if [SUP TO CONSOL CARRIER SCAC] = "NA" then "" else if [SUP TO CONSOL CARRIER SCAC] = "DHL" then "" else if [SUP TO CONSOL CARRIER SCAC] = "FCL" then "" else [SUP TO CONSOL CARRIER SCAC]),
+    #"Added Consol_Cutoff_Time" = Table.AddColumn(#"Added CarrierA_SFS_SCAC", "Consol_Cutoff_Time", each if [#"CONSOLIDATOR (POOL) CUT-OFF time"] = 0 then " " else if [#"CONSOLIDATOR (POOL) CUT-OFF time"] = " " 
+    then [#"CONSOLIDATOR (POOL) CUT-OFF time"] = "NA" else if [#"CONSOLIDATOR (POOL) CUT-OFF time"] = "None" then " " else [#"CONSOLIDATOR (POOL) CUT-OFF time"]),
+    #"Added CarrierA_TLD_GSDB6" = Table.AddColumn(#"Added Consol_Cutoff_Time", "CarrierA_TLD_GSDB6", each [SSL_GSDB6]),
+    #"Added Transport_Total" = Table.AddColumn(#"Added CarrierA_TLD_GSDB6", "Transport_Total", each [#"otb_adp,"]),
+    //recreated the if statement including the V-Lookup to create the Consol_Cutoff_Day column
+    #"Merged Consol_Cutoff_Day (merge)" = Table.NestedJoin(#"Added Transport_Total", {"CONSOLIDATOR (POOL) CUT-OFF"}, days, {"Day"}, "days", JoinKind.LeftOuter),
+    #"Expanded Consol_Cutoff_Day (merge)" = Table.ExpandTableColumn(#"Merged Consol_Cutoff_Day (merge)", "days", {"numeric"}, {"days.numeric"}),
+    #"Renamed Merged Consol_Cutoff_Day (merge)" = Table.RenameColumns(#"Expanded Consol_Cutoff_Day (merge)",{{"days.numeric", "Merged Consol_Cutoff_Day (merge)"}}),
+    #"Added Consol_Cutoff_Day" = Table.AddColumn(#"Renamed Merged Consol_Cutoff_Day (merge)", "Consol_Cutoff_Day", each if [#"CONSOLIDATOR (POOL) CUT-OFF"] = 0 then " " else 
+    if [#"CONSOLIDATOR (POOL) CUT-OFF"] = " " then " " else if [#"CONSOLIDATOR (POOL) CUT-OFF"] = "NA" then " " else if [#"CONSOLIDATOR (POOL) CUT-OFF"] = "None" then " " else [days.numeric]),
+    #"Removed Merged Consol_Cutoff_Day (merge)" = Table.RemoveColumns(#"Added Consol_Cutoff_Day",{"Merged Consol_Cutoff_Day (merge)"}),
+    //adding in the blank columns to make sure we recreate the exact same output file to upload in the Ford system
+    #"Added Broker_cd" = Table.AddColumn(#"Removed Merged Consol_Cutoff_Day (merge)", "Broker_cd", each ""),
+    #"Added Broker_SCAC" = Table.AddColumn(#"Added Broker_cd", "Broker_SCAC", each ""),
+    #"Added Other_Exception" = Table.AddColumn(#"Added Broker_SCAC", "Other_Exception", each ""),
+    #"Added Pre-consol_stop_GSDB" = Table.AddColumn(#"Added Other_Exception", "Pre-consol_stop_GSDB", each ""),
+    #"Added CarrierA_SFS_GSDB6" = Table.AddColumn(#"Added Pre-consol_stop_GSDB", "CarrierA_SFS_GSDB6", each ""),
+    #"Added Consol_SCAC" = Table.AddColumn(#"Added CarrierA_SFS_GSDB6", "Consol_SCAC", each ""),
+    #"Added Container_Type_Other" = Table.AddColumn(#"Added Consol_SCAC", "Container_Type_Other", each ""),
+    #"Added LoadYard_GSDB6_cd" = Table.AddColumn(#"Added Container_Type_Other", "LoadYard_GSDB6_cd", each ""),
+    #"Added CarrierA_DDC_Mode" = Table.AddColumn(#"Added LoadYard_GSDB6_cd", "CarrierA_DDC_Mode", each "T"),
+    //port cutoff logic I added two columns to allow me to recreate the focus on the last four digits in the original excel file
+    #"Added PORT CUT OFF COPY (last 4 values)" = Table.AddColumn(#"Added CarrierA_DDC_Mode", "PORT CUT OFF COPY (last 4 values)", each [PORT CUT OFF COPY]),
+    #"Inserted Last Characters1" = Table.AddColumn(#"Added PORT CUT OFF COPY (last 4 values)", "Last Characters.3", each Text.End([#"PORT CUT OFF COPY (last 4 values)"], 4), type text),
+    #"Added PORT CUT OFF 2" = Table.AddColumn(#"Inserted Last Characters1", "PORT CUT OFF 2", each if [Last Characters.3] = "0000" then " " else [PORT CUT OFF COPY]),
+    #"Removed Columns" = Table.RemoveColumns(#"Added PORT CUT OFF 2",{"PORT CUT OFF COPY (last 4 values)", "Last Characters.3"})
+in
+    #"Removed Columns"
+
+
+
+
+    working on
+
+    let
+    Source = master_old_data,
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"2346", type text}}),
+    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"MODE", "mmode"}, {"SUPPLIER GSDB", "supplier_cd"}, {"PLANT GSDB", "plant_cd"}, {"COMMODITY", "commodity"}, 
+    {"SHIP FREQUENCY", "ship_freq,"}, {"FORD ROUTE ID", "route_id,"}, {"TOTAL DAYS ROUTE GUIDE", "total_transit,"}, {"DAYS AOP TO OTB", "aop_otb,"}, {"DAYS OTB TO ADP", "otb_adp,"}, 
+    {"DAYS ADP TO TLD", "adp_tld,"}, {"START EFFECTIVE YEAR", "trash1"}, {"START EFFECTIVE MONTH", "trash2"}, {"START EFFECTIVE DAY", "trash3"}, {"END EFFECTIVE YEAR", "trash4"}, 
+    {"END EFFECTIVE MONTH", "trash5"}, {"END EFFECTIVE DAY", "trash6"}, {"TDI MODE", "Mode"}, {"DIRECTION", "Direction"}, {"ADDITIONAL CMMS EXCEPTION TRANSIT", "Exception_Total"}, 
+    {"EXCEPTION TRANSIT REASON", "Exception_Reason"}, {"MODE TO PORT", "CarrierA_SFS_Mode"}, {"CONSOLIDATOR GSDB", "Consol_cd"}, {"SSL GSDB", "SSL_GSDB6"},  
+    {"SSL CONTRACT NUMBER", "Contract_Number"}, {"% OF BUSINESS WITH SSL", "SSL_Percent"}, {"SSL PICK UP LOC", "SSL_Pickup_cd"}, {"SSL PICK UP LOAD TYPE", "SSL_Pickup_Type"}, {"MODE FROM PORT", "CarrierA_TLD_Mode"}, 
+    {"SSL DROP OFF UNLOAD TYPE", "Delivery_Type"}, {"SSL DROP OFF LOC", "SSL_DropOff_GSDB"}, {"PRIORITY", "Priority"}, {"TOTAL DAYS CMMS", "cmms_transit,"}, {"NEW PORT CODE", "Origin_Port"}}),
+    //rounded off the float int he column
+    #"Rounded Off cmms_transit," = Table.TransformColumns(#"Renamed Columns",{{"cmms_transit,", each Number.Round(_, 0), Int64.Type}}),
+    // merged in the code sheet
+    #"Merged Queries" = Table.NestedJoin(#"Rounded Off cmms_transit,", {"mmode"}, Codes, {"Code"}, "Codes", JoinKind.LeftOuter),
+    #"Expanded Codes" = Table.ExpandTableColumn(#"Merged Queries", "Codes", {"Export", "Import"}, {"Codes.Export", "Codes.Import"}),
+    #"Renamed load_type columns" = Table.RenameColumns(#"Expanded Codes",{{"Codes.Export", "Origin_Load_Type"}, {"Codes.Import", "Destn_Load_Type"}}),
+    //rewrote the excel formulas used in the routingguide
+    #"Added sfs_acc," = Table.AddColumn(#"Renamed load_type columns", "sfs_acc,", each if [Origin_Load_Type] = "LCL" then [#"DAYS SFS TO ACC (LCL)"] else 999),
+    #"Added acc_dcc," = Table.AddColumn(#"Added sfs_acc,", "acc_dcc,", each if [Origin_Load_Type] = "LCL" then [#"DAYS ACC TO DCC (LCL)"] else 999),
+    #"Added tld_adc," = Table.AddColumn(#"Added acc_dcc,", "tld_adc,", each if [Destn_Load_Type] = "LCL" then [#"DAYS TLD TO ADC (LCL)"] else "999"),
+    #"Added adc_ddc," = Table.AddColumn(#"Added tld_adc,", "adc_ddc,", each if [Destn_Load_Type] = "LCL" then [#"DAYS ADC TO DDC (LCL)"] else "999"),
+    #"Added dcc_aop," = Table.AddColumn(#"Added adc_ddc,", "dcc_aop,", each if [Origin_Load_Type] = "LCL" then [#"DAYS DCC TO AOP (LCL)"] else [#"DAYS SFS TO AOP (FCL)"]),
+    #"Added ddc_dpl," = Table.AddColumn(#"Added dcc_aop,", "ddc_dpl,", each if [Destn_Load_Type] = "LCL" then [#"DAYS DDC TO DPL (LCL)"] else [#"DAYS TLD TO DPL (FCL)"]),
+    //used nested if statements to recreate an excel or operator
+    #"Added DeConsol_cd" = Table.AddColumn(#"Added ddc_dpl,", "DeConsol_cd", each if [DECONSOLIDATOR] = " " then " " else if [DECONSOLIDATOR] = "FCL" then " " else if [DECONSOLIDATOR] = 0 then " " else if [DECONSOLIDATOR] = "NA" then " " else [DECONSOLIDATOR]),
+    #"Added CarrierA_DDC_SCAC" = Table.AddColumn(#"Added DeConsol_cd", "CarrierA_DDC_SCAC", each if [DECON TO PLT CARRIER SCAC] = " " then " " else if [DECON TO PLT CARRIER SCAC] = "FCL" then " " else if [DECONSOLIDATOR] = 0 then " " else if [DECON TO PLT CARRIER SCAC] = "NA" then " " else [DECON TO PLT CARRIER SCAC]),
+    #"Added CarrierA_DDC_GSDB6" = Table.AddColumn(#"Added CarrierA_DDC_SCAC", "CarrierA_DDC_GSDB6", each if [POST DECONSOL STOP] = " " then " " else if [POST DECONSOL STOP] = "FCL" then " " else if [POST DECONSOL STOP] = 0 then " " else if [POST DECONSOL STOP] = "NA" then " " else [POST DECONSOL STOP]),
+    #"Added Dock_Code" = Table.AddColumn(#"Added CarrierA_DDC_GSDB6", "Dock_Code", each if [DOCK CODE] = "NA" then " " else if [DOCK CODE] = 0 then " " else [DOCK CODE]),
+    #"Added Alternate_ShipTo" = Table.AddColumn(#"Added Dock_Code", "Alternate_ShipTo", each if [ALTCONSIGNEE] = " " then " " else if [ALTCONSIGNEE] = "NA"  then " " else if [ALTCONSIGNEE] = 0 then " " else [ALTCONSIGNEE]),
+    #"Added Payment_Terms" = Table.AddColumn(#"Added Alternate_ShipTo", "Payment_Terms", each [PAYMENT TERMS]),
+    //slicing the values in the provided columns
+    #"Extracted First Characters Payment_Terms" = Table.TransformColumns(#"Added Payment_Terms", {{"Payment_Terms", each Text.Start(Text.From(_, "en-US"), 3), type text}}),
+    #"Added LoadYd_Cutoff_Time" = Table.AddColumn(#"Extracted First Characters Payment_Terms", "LoadYd_Cutoff_Time", each if [#"LOAD YARD CUT-OFF"] = 0 then " " else [#"LOAD YARD CUT-OFF"]),
+    #"Inserted Last Characters LoadYd_Cutoff_Time" = Table.AddColumn(#"Added LoadYd_Cutoff_Time", "Last Characters", each Text.End([LoadYd_Cutoff_Time], 4), type text),
+    #"Inserted Last Characters Origin_Port" = Table.AddColumn(#"Inserted Last Characters LoadYd_Cutoff_Time", "Last Characters.1", each Text.End([Origin_Port], 3), type text),
+    #"Added Destn_Port" = Table.AddColumn(#"Inserted Last Characters Origin_Port", "Destn_Port", each [Origin_Port]),
+    #"Inserted Last Characters" = Table.AddColumn(#"Added Destn_Port", "Last Characters.2", each Text.End([Destn_Port], 3), type text),
+    //added in the event day from the days table (replaced the vlookups in the sheet)
+    #"First Characters LOAD YARD CUT-OFF" = Table.TransformColumns(#"Inserted Last Characters", {{"LOAD YARD CUT-OFF", each Text.Start(_, 3), type text}}),
+    #"Merged LoadYd_Cutoff_Day" = Table.NestedJoin(#"First Characters LOAD YARD CUT-OFF", {"LOAD YARD CUT-OFF"}, days, {"Day"}, "days", JoinKind.LeftOuter),
+    #"Renamed LoadYd_Cutoff_Day" = Table.RenameColumns(#"Merged LoadYd_Cutoff_Day",{{"days", "LoadYd_Cutoff_Day"}}),
+    #"Expanded LoadYd_Cutoff_Day" = Table.ExpandTableColumn(#"Renamed LoadYd_Cutoff_Day", "LoadYd_Cutoff_Day", {"Letter"}, {"LoadYd_Cutoff_Day.Letter"}),
+    #"Extracted First Characters" = Table.TransformColumns(#"Expanded LoadYd_Cutoff_Day", {{"LoadYd_Cutoff_Day.Letter", each Text.Start(_, 2), type text}}),
+    #"Renamed Columns LoadYd_Cutoff_Day" = Table.RenameColumns(#"Extracted First Characters",{{"LoadYd_Cutoff_Day.Letter", "LoadYd_Cutoff_Day"}}),
+    #"Added PORT CUT OFF COPY" = Table.AddColumn(#"Renamed Columns LoadYd_Cutoff_Day", "PORT CUT OFF COPY", each [PORT CUT OFF]),
+    #"First Characters PORT CUT OFF" = Table.TransformColumns(#"Added PORT CUT OFF COPY", {{"PORT CUT OFF", each Text.Start(_, 3), type text}}),
+    #"Merged Port_Cutoff_Day" = Table.NestedJoin(#"First Characters PORT CUT OFF", {"PORT CUT OFF"}, days, {"Day"}, "days", JoinKind.LeftOuter),
+    #"Expanded days" = Table.ExpandTableColumn(#"Merged Port_Cutoff_Day", "days", {"numeric"}, {"days.numeric"}),
+    #"Renamed Port_Cutoff_Time" = Table.RenameColumns(#"Expanded days",{{"days.numeric", "Port_Cutoff_Time"}}),
+    #"First Characters ESTIMATED SA DAY" = Table.TransformColumns(#"Renamed Port_Cutoff_Time", {{"ESTIMATED SA DAY", each Text.Start(_, 3), type text}}),
+    #"Merged Est_Sail_Day" = Table.NestedJoin(#"First Characters ESTIMATED SA DAY", {"ESTIMATED SA DAY"}, days, {"Day"}, "days.1", JoinKind.LeftOuter),
+    #"Expanded Est_Sail_Day" = Table.ExpandTableColumn(#"Merged Est_Sail_Day", "days.1", {"numeric"}, {"days.1.numeric"}),
+    #"Renamed Est_Sail_Day" = Table.RenameColumns(#"Expanded Est_Sail_Day",{{"days.1.numeric", "Est_Sail_Day"}}),
+    #"First Characters ESTIMATED AR DAY" = Table.TransformColumns(#"Renamed Est_Sail_Day", {{"ESTIMATED AR DAY", each Text.Start(_, 3), type text}}),
+    #"Merged Est_Arr_Day_Dest_Port" = Table.NestedJoin(#"First Characters ESTIMATED AR DAY", {"ESTIMATED AR DAY"}, days, {"Day"}, "days", JoinKind.LeftOuter),
+    #"Expanded Est_Arr_Day_Dest_Port" = Table.ExpandTableColumn(#"Merged Est_Arr_Day_Dest_Port", "days", {"numeric"}, {"days.numeric"}),
+    #"First Characters Est_Arr_Day_Dest_Port" = Table.TransformColumns(#"Expanded Est_Arr_Day_Dest_Port", {{"days.numeric", each Text.Start(_, 2), type text}}),
+    #"Renamed Est_Arr_Day_Dest_Port" = Table.RenameColumns(#"First Characters Est_Arr_Day_Dest_Port",{{"days.numeric", "Est_Arr_Day_Dest_Port"}}),
+    #"Merged port_cutoff" = Table.NestedJoin(#"Renamed Est_Arr_Day_Dest_Port", {"PORT CUT OFF"}, days, {"Day"}, "days", JoinKind.LeftOuter),
+    #"Expanded port_cutoff" = Table.ExpandTableColumn(#"Merged port_cutoff", "days", {"numeric"}, {"days.numeric"}),
+    #"Renamed port_cutoff" = Table.RenameColumns(#"Expanded port_cutoff",{{"days.numeric", "port_cutoff"}}),
+    #"First Characters port_cutoff" = Table.TransformColumns(#"Renamed port_cutoff", {{"port_cutoff", each Text.Start(_, 2), type text}}),
+    //recreated frequency day logic as used in the routing guide
+    #"Added Frequency_Day" = Table.AddColumn(#"First Characters port_cutoff", "Frequency_Day ", each if ([#"ship_freq,"] = 31) or ([#"ship_freq,"] = 32) or ([#"ship_freq,"] = 41) then [#"ship_freq,"] 
+    else if [#"ship_freq,"] = 21 then 1 else if [#"ship_freq,"] = 19 then 6 
+    else if [#"ship_freq,"] = 22 then 2 else if [#"ship_freq,"] = 23 then 3 
+    else if [#"ship_freq,"] = 24 then 4 else if [#"ship_freq,"] = 25 then 5 else 8),
+    #"Added Export_Total" = Table.AddColumn(#"Added Frequency_Day", "Export_Total", each 
+    if [Origin_Load_Type] = "LCL" then ([#"DAYS SFS TO ACC (LCL)"] + [#"DAYS ACC TO DCC (LCL)"] + [#"DAYS DCC TO AOP (LCL)"] + [#"aop_otb,"]) else ([#"DAYS SFS TO AOP (FCL)"] + [#"aop_otb,"])),
+    #"Added Import_Total" = Table.AddColumn(#"Added Export_Total", "Import_Total", each if [Destn_Load_Type] = "LCL" then ([#"adp_tld,"] + [#"DAYS TLD TO ADC (LCL)"] + [#"DAYS ADC TO DDC (LCL)"] + [#"DAYS DDC TO DPL (LCL)"]) else ([#"adp_tld,"] + [#"DAYS TLD TO DPL (FCL)"])),
+    #"Added CarrierA_SFS_SCAC" = Table.AddColumn(#"Added Import_Total", "CarrierA_SFS_SCAC", each if [SUP TO CONSOL CARRIER SCAC] = "NA" then "" else if [SUP TO CONSOL CARRIER SCAC] = "DHL" then "" else if [SUP TO CONSOL CARRIER SCAC] = "FCL" then "" else [SUP TO CONSOL CARRIER SCAC]),
+    #"Added Consol_Cutoff_Time" = Table.AddColumn(#"Added CarrierA_SFS_SCAC", "Consol_Cutoff_Time", each if [#"CONSOLIDATOR (POOL) CUT-OFF time"] = 0 then " " else if [#"CONSOLIDATOR (POOL) CUT-OFF time"] = " " 
+    then [#"CONSOLIDATOR (POOL) CUT-OFF time"] = "NA" else if [#"CONSOLIDATOR (POOL) CUT-OFF time"] = "None" then " " else [#"CONSOLIDATOR (POOL) CUT-OFF time"]),
+    #"Added CarrierA_TLD_GSDB6" = Table.AddColumn(#"Added Consol_Cutoff_Time", "CarrierA_TLD_GSDB6", each [SSL_GSDB6]),
+    #"Added Transport_Total" = Table.AddColumn(#"Added CarrierA_TLD_GSDB6", "Transport_Total", each [#"otb_adp,"]),
+    //recreated the if statement including the V-Lookup to create the Consol_Cutoff_Day column
+    #"Merged Consol_Cutoff_Day (merge)" = Table.NestedJoin(#"Added Transport_Total", {"CONSOLIDATOR (POOL) CUT-OFF"}, days, {"Day"}, "days", JoinKind.LeftOuter),
+    #"Expanded Consol_Cutoff_Day (merge)" = Table.ExpandTableColumn(#"Merged Consol_Cutoff_Day (merge)", "days", {"numeric"}, {"days.numeric"}),
+    #"Renamed Merged Consol_Cutoff_Day (merge)" = Table.RenameColumns(#"Expanded Consol_Cutoff_Day (merge)",{{"days.numeric", "Merged Consol_Cutoff_Day (merge)"}}),
+    #"Added Consol_Cutoff_Day" = Table.AddColumn(#"Renamed Merged Consol_Cutoff_Day (merge)", "Consol_Cutoff_Day", each if [#"CONSOLIDATOR (POOL) CUT-OFF"] = 0 then " " else 
+    if [#"CONSOLIDATOR (POOL) CUT-OFF"] = " " then " " else if [#"CONSOLIDATOR (POOL) CUT-OFF"] = "NA" then " " else if [#"CONSOLIDATOR (POOL) CUT-OFF"] = "None" then " " else [days.numeric]),
+    #"Removed Merged Consol_Cutoff_Day (merge)" = Table.RemoveColumns(#"Added Consol_Cutoff_Day",{"Merged Consol_Cutoff_Day (merge)"}),
+    //adding in the blank columns to make sure we recreate the exact same output file to upload in the Ford system
+    #"Added Broker_cd" = Table.AddColumn(#"Removed Merged Consol_Cutoff_Day (merge)", "Broker_cd", each ""),
+    #"Added Broker_SCAC" = Table.AddColumn(#"Added Broker_cd", "Broker_SCAC", each ""),
+    #"Added Other_Exception" = Table.AddColumn(#"Added Broker_SCAC", "Other_Exception", each ""),
+    #"Added Pre-consol_stop_GSDB" = Table.AddColumn(#"Added Other_Exception", "Pre-consol_stop_GSDB", each ""),
+    #"Added CarrierA_SFS_GSDB6" = Table.AddColumn(#"Added Pre-consol_stop_GSDB", "CarrierA_SFS_GSDB6", each ""),
+    #"Added Consol_SCAC" = Table.AddColumn(#"Added CarrierA_SFS_GSDB6", "Consol_SCAC", each ""),
+    #"Added Container_Type_Other" = Table.AddColumn(#"Added Consol_SCAC", "Container_Type_Other", each ""),
+    #"Added LoadYard_GSDB6_cd" = Table.AddColumn(#"Added Container_Type_Other", "LoadYard_GSDB6_cd", each ""),
+    #"Added CarrierA_DDC_Mode" = Table.AddColumn(#"Added LoadYard_GSDB6_cd", "CarrierA_DDC_Mode", each "T"),
+    //port cutoff logic I added two columns to allow me to recreate the focus on the last four digits in the original excel file
+    #"Added PORT CUT OFF COPY (last 4 values)" = Table.AddColumn(#"Added CarrierA_DDC_Mode", "PORT CUT OFF COPY (last 4 values)", each [PORT CUT OFF COPY]),
+    #"Inserted Last Characters1" = Table.AddColumn(#"Added PORT CUT OFF COPY (last 4 values)", "Last Characters.3", each Text.End([#"PORT CUT OFF COPY (last 4 values)"], 4), type text),
+    #"Added PORT CUT OFF 2" = Table.AddColumn(#"Inserted Last Characters1", "PORT CUT OFF 2", each if [Last Characters.3] = "0000" then " " else [PORT CUT OFF COPY]),
+    #"Removed Columns" = Table.RemoveColumns(#"Added PORT CUT OFF 2",{"PORT CUT OFF COPY (last 4 values)", "Last Characters.3", "2346"}),
+    //ordering columns to match milestone feed
+    #"Reordered Columns" = Table.ReorderColumns(#"Removed Columns",{"mmode", "supplier_cd", "plant_cd", "commodity", "ship_freq,", "route_id,", "cmms_transit,", "port_cutoff",
+    "total_transit,","sfs_acc,", "acc_dcc,", "dcc_aop,", "aop_otb,", "otb_adp,", "adp_tld,", "tld_adc,", "adc_ddc,", "ddc_dpl,",  "trash1", "trash2", "trash3", "trash4", "trash5", "trash6", 
+     //week_nbr
+     "Mode", "Origin_Load_Type", "Destn_Load_Type", "Direction", "Payment_Terms", "Broker_cd", "Broker_SCAC", "Frequency_Day ", "Exception_Total", "Exception_Reason", "Other_Exception", 
+    "Export_Total", "Import_Total", "Transport_Total","Pre-consol_stop_GSDB",  "CarrierA_SFS_SCAC", "CarrierA_SFS_GSDB6", "CarrierA_SFS_Mode",
+    "Consol_cd","Consol_SCAC","Consol_Cutoff_Day", "Consol_Cutoff_Time", "SSL_GSDB6",
+    //"SSL_SCAC", 
+    "Contract_Number",
+    //SSL_Percent
+    "SSL_Pickup_cd","SSL_Pickup_Type", "Container_Type_20", "Container_Type_40    ", "Container_Type_40HC    ", "Container_Type_45    ","Container_Type_Other","LoadYard_GSDB6_cd",
+    "LoadYd_Cutoff_Day",  "LoadYd_Cutoff_Time",
+    //Port_Cutoff_Day
+    "Port_Cutoff_Time", "Origin_Port", "Est_Sail_Day", "Destn_Port", "Est_Arr_Day_Dest_Port",
+    //"CarrierA_TLD_SCAC",
+    "CarrierA_TLD_GSDB6","CarrierA_TLD_Mode", "Delivery_Type",  "SSL_DropOff_GSDB","DeConsol_cd", "CarrierA_DDC_SCAC","CarrierA_DDC_GSDB6","CarrierA_DDC_Mode","Dock_Code","Alternate_ShipTo", "Priority", "Routing_Descriptor ",
+
+
+    
+    "SUPPLIER CMF", "PLANT CMF", 
+    "1 DIGIT DAY",  "REGION", "Region Code", "Country Code", "FLOAT (CMMS - ROUTE GUIDE)",  "DAYS SFS TO AOP (FCL)", "DAYS SFS TO ACC (LCL)", "DAYS ACC TO DCC (LCL)", 
+    "DAYS DCC TO AOP (LCL)", "SUPPLIER", "SUPPLIER BUSINESS NAME", "STREET", "CITY", "COUNTRY", "POSTAL CODE", "CONTACT NAME", "PHONE NUMBER", "EMAIL ADDRESS 1", "EMAIL ADDRESS 2", "EMAIL ADDRESS 3", 
+    
+    //"SSL PICK UP LOC", 
+    "SSL PICK UP LOC NAME", "SSL PICK UP LOC ADDRESS", "SSL PICK UP LOC CITY", "SSL PICK UP LOC ST, PR, TE", "SSL PICK UP COUNTRY", "SSL PICKUP POSTAL CODE",  
+     "CONSOLIDATOR",  "Carrier#(lf)(Direct / Pre-#(lf)ODC/CC#(lf)collection)", 
+
+    "CARRIER CONTACT SURNAME", "CARRIER CONTACT NAME", "CARRIER CONTACT LOCATION", "CARRIER PHONE", "CARRIER FAX", "CARRIER E-MAIL",  "CARRIER MOBILE", "1st#(lf)ODC/CC", 
+    "LTL#(lf)Carrier#(lf)ex 1st ODC/CC", "2nd#(lf)ODC/CC", "LTL#(lf)Carrier#(lf)ex2nd ODC/CC", "SUP TO CONSOL CARRIER SCAC", "PRE CONSOL STOP", "CONSOLIDATOR (POOL) CUT-OFF", 
+
+    "CONSOLIDATOR (POOL) CUT-OFF time",  "LOAD YARD LOCATION", "LOAD YARD CUT-OFF", "PORT CUT OFF", "ORIGIN PORT",    
+    "ESTIMATED SA DAY", "ESTIMATED AR DAY", "SSL NAME",    "INTERMITTENT PORT", "DESTINATION PORT", "NEW PORT CODE_1",
+
+    "YARD LOCATION UNLOAD",  "SSL DROP OFF LOCATION NAME", "SSL DROP OFF LOC ADDRESS", "SSL DROP OFF LOC CITY", "SSL DROP OF LOC ST, PR, TR", 
+    "SSL DROP OFF LOC CON CODE", "SSL DROP OFF LOC POSTAL CODE",  "DECONSOLIDATOR", "DECON TO PLT CARRIER SCAC", "POST DECONSOL STOP", "DAYS TLD TO ADC (LCL)", "DAYS ADC TO DDC (LCL)", 
+
+    "DAYS DDC TO DPL (LCL)", "DAYS TLD TO DPL (FCL)", "ALTCONSIGNEE", "PLANT", "PLANT BUSINESS NAME", "PLANT STREET NAME", "CITY_2", "STATE, PROV, TERR", "COUNTRY_3", "POSTAL CODE_4", "DOCK CODE", 
+     "ADDITIONAL RG EXCEPTION TRANSIT",  "CMMS TT W/O EXCEPTION TRANSIT", "RG TT W/O EXCEPTION TRANSIT ",
+
+    "CUSTOMS BROKER", "PAYMENT TERMS",  "ACTIVE/INACTIVE",   "UPDATE FLAG FOR SHIPPING INSTRUCTIONS", "EMAIL ADDRESS 4", "STATE, PROV, TERR_5", "NAME OF CARRIER'S SERVICE",
+     "MARKUS CMMS TIME", "TOTAL DAYS CMMS_6", "MARKUS SF", "SHIP FREQUENCY_7", "MARKUS DIGIT DAY", "1 DIGIT DAY_8", "DISCREPANCY", "RESPONSIBLE PARTY", "WEEK NUMBER", "MARKUS COMMENTS",  
+
+               
+     "Last Characters", "Last Characters.1", "Last Characters.2",  "PORT CUT OFF COPY",    
+           
+           "PORT CUT OFF 2"}),
+    #"Added week_nbr" = Table.AddColumn(#"Reordered Columns", "week_nbr", each "2243")
+in
+    #"Added week_nbr"
