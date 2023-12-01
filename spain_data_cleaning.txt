@@ -1,0 +1,79 @@
+blank_check
+
+let
+    Source = spain_data_cleaning,
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Direction", type text}, {"RouteID", type text}, {"PriorityId", Int64.Type}, {"Container", type text}, {"HouseBill", type text}, {"ASNPackSlip", type any}, 
+    {"Supplier", type text}, {"Plant", type text}, {"ARL", type any}, {"SSL", type text}, {"Vessel", type text}, {"Voyage", type any}, {"OriginPort", type text}, {"DestinationPort", type text}, {"HotListed", type any}, 
+    {"ETA", type datetime}, {"EGD", type datetime}, {"Size", type text}, {"WeekNumber", Int64.Type}, {"DOC", type text}, {"ShipType", type text}, {"MasterBill", type any}, {"SFS", type datetime}, {"ETD", type datetime}, 
+    {"ATD", type datetime}, {"ATA", type datetime}, {"TIB", type any}, {"Diverted", type any}, {"Cancelled", type any}, {"HeldAtPort", type any}, {"TLD", type text}, {"RAR", type any}, {"CusClrFCL", type any}, 
+    {"LFD", type any}, {"HeldAtRail", type any}, {"PrePull", type any}, {"DT", type text}, {"CAD", type datetime}, {"ADC", type any}, {"DDC", type any}, {"DPL", type datetime}, {"DC", type datetime}, {"LatestRemark", type any}, {"Rack", type logical}}),
+
+    #"Blank check Direction" = Table.AddColumn(#"Changed Type", "Blank check Direction", each if [Direction] is null then true else false),
+    #"Blank check RouteID" = Table.AddColumn(#"Blank check Direction", "Blank check RouteID", each if [RouteID] is null then true else false),
+    #"Blank check PriorityId" = Table.AddColumn(#"Blank check RouteID", "Blank check PriorityId", each if [PriorityId] is null then true else false),
+    #"Blank check Container" = Table.AddColumn(#"Blank check PriorityId", "Blank check Container", each if [Container] is null then true else false),
+    #"Blank check HouseBill" = Table.AddColumn(#"Blank check Container", "Blank check HouseBill", each if [HouseBill] is null then true else false),
+    #"Blank check ASNPackSlip" = Table.AddColumn(#"Blank check HouseBill", "Blank check ASNPackSlip", each if [ASNPackSlip] is null then true else false),
+    #"Blank check Supplier" = Table.AddColumn(#"Blank check ASNPackSlip", "Blank check Supplier", each if [Supplier] is null then true else false),
+    #"Blank check Plant" = Table.AddColumn(#"Blank check Supplier", "Blank check Plant", each if [Plant] is null then true else false),
+    #"Blank check ARL" = Table.AddColumn(#"Blank check Plant", "Blank check ARL", each if [ARL] is null then true else false),
+    #"Blank check SSL" = Table.AddColumn(#"Blank check ARL", "Blank check SSL", each if [SSL] is null then true else false),
+    #"Blank check Vessel" = Table.AddColumn(#"Blank check SSL", "Blank check Vessel", each if [Vessel] is null then true else false),
+    #"Blank check Voyage" = Table.AddColumn(#"Blank check Vessel", "Blank check Voyage", each if [Voyage] is null then true else false),
+    #"Blank check OriginPort" = Table.AddColumn(#"Blank check Voyage", "Blank check OriginPort", each if [OriginPort] is null then true else false),
+    #"Blank check DestinationPort" = Table.AddColumn(#"Blank check OriginPort", "Blank check DestinationPort", each if [DestinationPort] is null then true else false),
+    #"Blank check HotListed" = Table.AddColumn(#"Blank check DestinationPort", "Blank check HotListed", each if [HotListed] is null then true else false),
+    #"Blank check ETA" = Table.AddColumn(#"Blank check HotListed", "Blank check ETA", each if [ETA] is null then true else false),
+    #"Blank check EGD" = Table.AddColumn(#"Blank check ETA", "Blank check EGD", each if [EGD] is null then true else false),
+    #"Blank check Size" = Table.AddColumn(#"Blank check EGD", "Blank check Size", each if [Size] is null then true else false),
+    #"Blank check WeekNumber" = Table.AddColumn(#"Blank check Size", "Blank check WeekNumber", each if [WeekNumber] is null then true else false),
+    #"Blank check DOC" = Table.AddColumn(#"Blank check WeekNumber", "Blank check DOC", each if [DOC] is null then true else false),
+    #"Blank check ShipType" = Table.AddColumn(#"Blank check DOC", "Blank check ShipType", each if [ShipType] is null then true else false),
+    #"Blank check MasterBill" = Table.AddColumn(#"Blank check ShipType", "Blank check MasterBill", each if [MasterBill] is null then true else false),
+    #"Blank check SFS" = Table.AddColumn(#"Blank check MasterBill", "Blank check SFS", each if [SFS] is null then true else false),
+    #"Blank check ETD" = Table.AddColumn(#"Blank check SFS", "Blank check ETD", each if [ETD] is null then true else false),
+    #"Blank check ATD" = Table.AddColumn(#"Blank check ETD", "Blank check ATD", each if [ATD] is null then true else false),
+    #"Blank check ATA" = Table.AddColumn(#"Blank check ATD", "Blank check ATA", each if [ATA] is null then true else false),
+    #"Blank check Diverted" = Table.AddColumn(#"Blank check ATA", "Blank check Diverted", each if [Diverted] is null then true else false),
+    #"Blank check Cancelled" = Table.AddColumn(#"Blank check Diverted", "Blank check Cancelled", each if [Cancelled] is null then true else false),
+    #"Blank check HeldAtPort" = Table.AddColumn(#"Blank check Cancelled", "Blank check HeldAtPort", each if [HeldAtPort] is null then true else false),
+    #"Blank check TLD" = Table.AddColumn(#"Blank check HeldAtPort", "Blank check TLD", each if [TLD] is null then true else false),
+    #"Blank check RAR" = Table.AddColumn(#"Blank check TLD", "Blank check RAR", each if [RAR] is null then true else false),
+    #"Blank check CusClrFCL" = Table.AddColumn(#"Blank check RAR", "Blank check CusClrFCL", each if [CusClrFCL] is null then true else false),
+    #"Blank check LFD" = Table.AddColumn(#"Blank check CusClrFCL", "Blank check LFD", each if [LFD] is null then true else false),
+    #"Blank check HeldAtRail" = Table.AddColumn(#"Blank check LFD", "Blank check HeldAtRail", each if [HeldAtRail] is null then true else false),
+    #"Blank check PrePull" = Table.AddColumn(#"Blank check HeldAtRail", "Blank check PrePull", each if [PrePull] is null then true else false),
+    #"Blank check DT" = Table.AddColumn(#"Blank check PrePull", "Blank check DT", each if [DT] is null then true else false),
+    #"Blank check CAD" = Table.AddColumn(#"Blank check DT", "Blank check CAD", each if [CAD] is null then true else false),
+    #"Blank check ADC" = Table.AddColumn(#"Blank check CAD", "Blank check ADC", each if [ADC] is null then true else false),
+    #"Blank check DDC" = Table.AddColumn(#"Blank check ADC", "Blank check DDC", each if [DDC] is null then true else false),
+    #"Blank check DPL" = Table.AddColumn(#"Blank check DDC", "Blank check DPL", each if [DPL] is null then true else false),
+    #"Blank check DC" = Table.AddColumn(#"Blank check DPL", "Blank check DC", each if [DC] is null then true else false),
+    #"Blank check LatestRemark" = Table.AddColumn(#"Blank check DC", "Blank check LatestRemark", each if [LatestRemark] is null then true else false),
+    #"Blank check Rack" = Table.AddColumn(Source, "Blank check Rack", each if [Rack] is null then true else false)
+
+in
+    #"Blank check Rack"
+
+spain_data_cleaning
+
+let
+    Source = Excel.CurrentWorkbook(){[Name="Table1"]}[Content],
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Direction", type text}, {"RouteID", type text}, {"PriorityId", Int64.Type}, {"Container", type text}, {"HouseBill", type text}, {"ASNPackSlip", type any}, 
+    {"Supplier", type text}, {"Plant", type text}, {"ARL", type any}, {"SSL", type text}, {"Vessel", type text}, {"Voyage", type any}, {"OriginPort", type text}, {"DestinationPort", type text}, {"HotListed", type any}, 
+    {"ETA", type datetime}, {"EGD", type datetime}, {"Size", type text}, {"WeekNumber", Int64.Type}, {"DOC", type text}, {"ShipType", type text}, {"MasterBill", type any}, {"SFS", type datetime}, {"ETD", type datetime}, 
+    {"ATD", type datetime}, {"ATA", type datetime}, {"TIB", type any}, {"Diverted", type any}, {"Cancelled", type any}, {"HeldAtPort", type any}, {"TLD", type text}, {"RAR", type any}, {"CusClrFCL", type any}, {"LFD", type any}, 
+    {"HeldAtRail", type any}, {"PrePull", type any}, {"DT", type text}, {"CAD", type datetime}, {"ADC", type any}, {"DDC", type any}, {"DPL", type datetime}, {"DC", type datetime}, {"LatestRemark", type any}, {"Rack", type logical}})
+in
+    #"Changed Type"
+
+
+
+
+
+
+
+
+
+
+

@@ -1,6 +1,5 @@
-FCSD import error check report
+FCL_data
 
-FCL data pull
 let
     Source = Excel.Workbook(Web.Contents("https://dsvcorp.sharepoint.com/teams/FORDAnalytics/Shared%20Documents/General/Ford%20FCSD%20import%20error%20check/Joann%20report/joann_report.xlsx"), null, true),
     FCSD_import_error_data_pull = Source{[Item="FCL_BCN",Kind="Sheet"]}[Data],
@@ -9,12 +8,155 @@ let
 in
     #"Changed Type"
 
-FCL blank error check (Used same code for LCL as all columns where the same)
+LCL_data
+
+let
+    Source = Excel.Workbook(Web.Contents("https://dsvcorp.sharepoint.com/teams/FORDAnalytics/Shared%20Documents/General/Ford%20FCSD%20import%20error%20check/Joann%20report/joann_report.xlsx"), null, true),
+    FCSD_import_error_data_pull = Source{[Item="LCL",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(FCSD_import_error_data_pull, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Lane ID", type text}, {"Origin GSDB ", type text}, {"Destination GSDB ", type text}, {"Mode", type text}, {"Carrier", type text}, {"Vessel Name", type text}, {"Voyage #", type text}, {"Booking #", type text}, {"Container #", type text}, {"Container Size", type text}, {"Master Bill Of Lading (MBOL)", type text}, {"House Bill Of Lading (HBOL)", Int64.Type}, {"Container Booking Requested Date", type date}, {"Container Booking Confirmation Date", type date}, {"Collection Note Received Date", type date}, {"Container Pick Up Date ", type date}, {"Arrived At Consol Center", type date}, {"Arrived At Port of Exit Date", type any}, {"Vessel Loading Date", type date}, {"Estimated Vessel Departure Date At Port of Exit", type date}, {"Actual Vessel Departure Date At Port of Exit", type date}, {"Estimated Vessel Arrival Date At Port of Entry", type date}, {"Actual Vessel Arrival Date At Port of Entry", type date}, {"Port Of Exit", type text}, {"Port Of Arrival", type text}, {"Container Departed Port Of Entry Date", type any}, {"Container Arrived At Local Rail Yard Date", type any}, {"Container Last Free Day (LFD)", type any}, {"Container Held At Rail", type any}, {"Container Departed Local Rail Yard Date", type any}, {"Container PrePull", type any}, {"Container Delivered To Destination Date", type date}, {"Returned To Local Rail Yard (Empty) Date", type any}, {"MMP Received Date", type any}, {"Incoterm", type text}, {"Pallet", Int64.Type}, {"Gross Weight (KG)", type number}, {"Chargeable Weight (KG)", type number}, {"Total Volume (CBM)", type number}, {"Total Container Utilization", type number}, {"Origin Name", type text}, {"Origin City", type text}, {"Origin Country", type text}, {"Destination Name", type text}, {"Destination City", type text}, {"Destination Country", type text}, {"Door To Port Transit Time", type any}, {"Port To Port Transit Time", Int64.Type}, {"Port To Door Transit Time", Int64.Type}, {"Total Transit Time", Int64.Type}, {"Shipment #", type text}, {"Shipment Status", type any}, {"Comments", type text}, {"Reason For Delay", type any}})
+in
+    #"Changed Type"
+
+AIR_data
+
+let
+
+Source = Excel.Workbook(Web.Contents("https://dsvcorp.sharepoint.com/teams/FORDAnalytics/Shared%20Documents/General/Ford%20FCSD%20import%20error%20check/Joann%20report/joann_report.xlsx"), null, true),
+FCSD_import_error_data_pull = Source{[Item="AIR",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(FCSD_import_error_data_pull, [PromoteAllScalars=true])
+
+in
+    #"Promoted Headers"
+
+FCL_blank_error_check
+
 let
     Source = FCL_data,
     #"Changed Type" = Table.TransformColumnTypes(Source,{{"Lane ID", type text}, {"Origin GSDB ", type text}, {"Destination GSDB ", type text}, {"Mode", type text}, {"Carrier", type text}, {"Vessel Name", type text}, {"Voyage #", type text}, {"Booking #", type text}, {"Container #", type text}, {"Container Size", type text}, {"Master Bill Of Lading (MBOL)", type text}, {"House Bill Of Lading (HBOL)", type text}, {"Container Booking Requested Date", type date}, {"Container Booking Confirmation Date", type date}, {"Collection Note Received Date", type date}, {"Container Pick Up Date ", type date}, {"Arrived At Consol Center", type date}, {"Arrived At Port of Exit Date", type date}, {"Vessel Loading Date", type date}, {"Estimated Vessel Departure Date At Port of Exit", type date}, {"Actual Vessel Departure Date At Port of Exit", type date}, {"Estimated Vessel Arrival Date At Port of Entry", type date}, {"Actual Vessel Arrival Date At Port of Entry", type date}, {"Port Of Exit", type text}, {"Port Of Arrival", type text}, {"Container Departed Port Of Entry Date", type date}, {"Container Arrived At Local Rail Yard Date", type date}, {"Container Last Free Day (LFD)", type date}, {"Container Held At Rail", type date}, {"Container Departed Local Rail Yard Date", type date}, {"Container PrePull", type any}, {"Container Delivered To Destination Date", type date}, {"Returned To Local Rail Yard (Empty) Date", type date}, {"MMP Received Date", type date}, {"Incoterm", type text}, {"Pallet", Int64.Type}, {"Gross Weight (KG)", type number}, {"Chargeable Weight (KG)", type number}, {"Total Volume (CBM)", type number}, {"Total Container Utilization", type number}, {"Origin Name", type text}, {"Origin City", type text}, {"Origin Country", type text}, {"Destination Name", type text}, {"Destination City", type text}, {"Destination Country", type text}, {"Door To Port Transit Time", Int64.Type}, {"Port To Port Transit Time", Int64.Type}, {"Port To Door Transit Time", Int64.Type}, {"Total Transit Time", Int64.Type}, {"Shipment #", type text}, {"Shipment Status", type text}, {"Comments", type text}, {"Reason For Delay", type text}}),
 
     //Check for blank fields in each column
+    //untill date step 1 blank checks are not part of date lgic
+    #"Blank check Lane ID" = Table.AddColumn(#"Changed Type", "Blank check Lane ID", each if [#"Lane ID"] is null then true else false),
+    #"Blank check Origin GSDB " = Table.AddColumn(#"Blank check Lane ID", "Blank check Origin GSDB ", each if [#"Origin GSDB "] is null then true else false),
+    #"Blank check Destination GSDB " = Table.AddColumn(#"Blank check Origin GSDB ", "Blank check Destination GSDB ", each if [#"Destination GSDB "] is null then true else false),
+    #"Blank check Mode" = Table.AddColumn(#"Blank check Destination GSDB ", "Blank check Mode", each if [#"Mode"] is null then true else false),
+    #"Blank check Carrier" = Table.AddColumn(#"Blank check Mode", "Blank check Carrier", each if [#"Carrier"] is null then true else false),
+    #"Blank check Vessel Name" = Table.AddColumn(#"Blank check Carrier", "Blank check Vessel Name", each if [#"Vessel Name"] is null then true else false),
+    #"Blank check Voyage #" = Table.AddColumn(#"Blank check Vessel Name", "Blank check Voyage #", each if [#"Voyage #"] is null then true else false),
+    #"Blank check Booking #" = Table.AddColumn(#"Blank check Voyage #", "Blank check Booking #", each if [#"Booking #"] is null then true else false),
+    #"Blank check Container #" = Table.AddColumn(#"Blank check Booking #", "Blank check Container #", each if [#"Container #"] is null then true else false),
+    #"Blank check Container Size" = Table.AddColumn(#"Blank check Container #", "Blank check Container Size", each if [#"Container Size"] is null then true else false),
+    #"Blank check Master Bill Of Lading (MBOL)" = Table.AddColumn(#"Blank check Container Size", "Blank check Master Bill Of Lading (MBOL)", each if [#"Master Bill Of Lading (MBOL)"] is null then true else false),
+    #"Blank check House Bill Of Lading (HBOL)" = Table.AddColumn(#"Blank check Master Bill Of Lading (MBOL)", "Blank check House Bill Of Lading (HBOL)", each if [#"House Bill Of Lading (HBOL)"] is null then true else false),
+    #"Blank check Container Booking Requested Date" = Table.AddColumn(#"Blank check House Bill Of Lading (HBOL)", "Blank check Container Booking Requested Date", each if [#"Container Booking Requested Date"] is null then true else false),
+    #"Blank check Container Booking Confirmation Date" = Table.AddColumn(#"Blank check Container Booking Requested Date", "Blank check Container Booking Confirmation Date", each if [#"Container Booking Confirmation Date"] is null then true else false),
+    //1st date step 
+    //(we check all dates in the steps after this step if they are blank to determine if this step is a valid blank this goes for each step)
+    #"Blank check Collection Note Received Date" = Table.AddColumn(#"Blank check Container Booking Confirmation Date", "Blank check Collection Note Received Date", each 
+    if ([#"Collection Note Received Date"] is null) and (([#"Container Pick Up Date "] is null) and ([#"Arrived At Consol Center"] is null) and ([#"Arrived At Port of Exit Date"] is null) and ([#"Vessel Loading Date"] is null)
+    and ([#"Estimated Vessel Departure Date At Port of Exit"] is null) and ([#"Actual Vessel Departure Date At Port of Exit"] is null) and ([#"Estimated Vessel Arrival Date At Port of Entry"] is null) and ([#"Actual Vessel Arrival Date At Port of Entry"] is null)
+    and ([#"Port Of Exit"] is null) and ([#"Port Of Arrival"] is null) and ([#"Container Departed Port Of Entry Date"] is null) and ([#"Container Arrived At Local Rail Yard Date"] is null) and ([#"Container Departed Local Rail Yard Date"] is null)
+    and ([#"Container Delivered To Destination Date"] is null)) then false else if [#"Collection Note Received Date"] is null then true else false),
+    //2nd date step 
+    #"Blank check Container Pick Up Date " = Table.AddColumn(#"Blank check Collection Note Received Date", "Blank check Container Pick Up Date ", each 
+    if [#"Container Pick Up Date "] is null and (([#"Arrived At Consol Center"] is null) and ([#"Arrived At Port of Exit Date"] is null) and ([#"Vessel Loading Date"] is null)
+    and ([#"Estimated Vessel Departure Date At Port of Exit"] is null) and ([#"Actual Vessel Departure Date At Port of Exit"] is null) and ([#"Estimated Vessel Arrival Date At Port of Entry"] is null) and ([#"Actual Vessel Arrival Date At Port of Entry"] is null)
+    and ([#"Port Of Exit"] is null) and ([#"Port Of Arrival"] is null) and ([#"Container Departed Port Of Entry Date"] is null) and ([#"Container Arrived At Local Rail Yard Date"] is null) and ([#"Container Departed Local Rail Yard Date"] is null)
+    and ([#"Container Delivered To Destination Date"] is null)) then true else if [#"Container Pick Up Date "] is null then true else false),
+    //3rd date step
+    #"Blank check Arrived At Consol Center" = Table.AddColumn(#"Blank check Container Pick Up Date ", "Blank check Arrived At Consol Center", each 
+    if [#"Arrived At Consol Center"] is null and (([#"Arrived At Port of Exit Date"] is null) and ([#"Vessel Loading Date"] is null)
+    and ([#"Estimated Vessel Departure Date At Port of Exit"] is null) and ([#"Actual Vessel Departure Date At Port of Exit"] is null) and ([#"Estimated Vessel Arrival Date At Port of Entry"] is null) and ([#"Actual Vessel Arrival Date At Port of Entry"] is null)
+    and ([#"Port Of Exit"] is null) and ([#"Port Of Arrival"] is null) and ([#"Container Departed Port Of Entry Date"] is null) and ([#"Container Arrived At Local Rail Yard Date"] is null) and ([#"Container Departed Local Rail Yard Date"] is null)
+    and ([#"Container Delivered To Destination Date"] is null)) then true else if [#"Arrived At Consol Center"] is null then true else false),
+    //4th date step
+    #"Blank check Arrived At Port of Exit Date" = Table.AddColumn(#"Blank check Arrived At Consol Center", "Blank check Arrived At Port of Exit Date", each 
+    if [#"Arrived At Port of Exit Date"] is null  and (([#"Vessel Loading Date"] is null)
+    and ([#"Estimated Vessel Departure Date At Port of Exit"] is null) and ([#"Actual Vessel Departure Date At Port of Exit"] is null) and ([#"Estimated Vessel Arrival Date At Port of Entry"] is null) and ([#"Actual Vessel Arrival Date At Port of Entry"] is null)
+    and ([#"Port Of Exit"] is null) and ([#"Port Of Arrival"] is null) and ([#"Container Departed Port Of Entry Date"] is null) and ([#"Container Arrived At Local Rail Yard Date"] is null) and ([#"Container Departed Local Rail Yard Date"] is null)
+    and ([#"Container Delivered To Destination Date"] is null)) then true else if [#"Arrived At Port of Exit Date"] is null then true else false),
+    //5th date step
+    #"Blank check Vessel Loading Date" = Table.AddColumn(#"Blank check Arrived At Port of Exit Date", "Blank check Vessel Loading Date", each 
+    if ([#"Vessel Loading Date"] is null) and (([#"Estimated Vessel Departure Date At Port of Exit"] is null) and ([#"Actual Vessel Departure Date At Port of Exit"] is null) and ([#"Estimated Vessel Arrival Date At Port of Entry"] is null) and ([#"Actual Vessel Arrival Date At Port of Entry"] is null)
+    and ([#"Port Of Exit"] is null) and ([#"Port Of Arrival"] is null) and ([#"Container Departed Port Of Entry Date"] is null) and ([#"Container Arrived At Local Rail Yard Date"] is null) and ([#"Container Departed Local Rail Yard Date"] is null)
+    and ([#"Container Delivered To Destination Date"] is null)) then true else if [#"Vessel Loading Date"] is null then true else false),
+    //6th date step
+    #"Blank check Estimated Vessel Departure Date At Port of Exit" = Table.AddColumn(#"Blank check Vessel Loading Date", "Blank check Estimated Vessel Departure Date At Port of Exit", each 
+    if ([#"Estimated Vessel Departure Date At Port of Exit"] is null) and (([#"Actual Vessel Departure Date At Port of Exit"] is null) and ([#"Estimated Vessel Arrival Date At Port of Entry"] is null) and ([#"Actual Vessel Arrival Date At Port of Entry"] is null)
+    and ([#"Port Of Exit"] is null) and ([#"Port Of Arrival"] is null) and ([#"Container Departed Port Of Entry Date"] is null) and ([#"Container Arrived At Local Rail Yard Date"] is null) and ([#"Container Departed Local Rail Yard Date"] is null)
+    and ([#"Container Delivered To Destination Date"] is null)) then true else if [#"Estimated Vessel Departure Date At Port of Exit"] is null then true else false),
+    //7th date step
+    #"Blank check Actual Vessel Departure Date At Port of Exit" = Table.AddColumn(#"Blank check Estimated Vessel Departure Date At Port of Exit", "Blank check Actual Vessel Departure Date At Port of Exit", each 
+    if ([#"Actual Vessel Departure Date At Port of Exit"] is null) and (([#"Estimated Vessel Arrival Date At Port of Entry"] is null) and ([#"Actual Vessel Arrival Date At Port of Entry"] is null)
+    and ([#"Port Of Exit"] is null) and ([#"Port Of Arrival"] is null) and ([#"Container Departed Port Of Entry Date"] is null) and ([#"Container Arrived At Local Rail Yard Date"] is null) and ([#"Container Departed Local Rail Yard Date"] is null)
+    and ([#"Container Delivered To Destination Date"] is null)) then true else if [#"Actual Vessel Departure Date At Port of Exit"] is null then true else false),
+    //8th date step
+    #"Blank check Estimated Vessel Arrival Date At Port of Entry" = Table.AddColumn(#"Blank check Actual Vessel Departure Date At Port of Exit", "Blank check Estimated Vessel Arrival Date At Port of Entry", each 
+    if [#"Estimated Vessel Arrival Date At Port of Entry"] is null and (([#"Actual Vessel Arrival Date At Port of Entry"] is null)
+    and ([#"Port Of Exit"] is null) and ([#"Port Of Arrival"] is null) and ([#"Container Departed Port Of Entry Date"] is null) and ([#"Container Arrived At Local Rail Yard Date"] is null) and ([#"Container Departed Local Rail Yard Date"] is null)
+    and ([#"Container Delivered To Destination Date"] is null))then true else if [#"Estimated Vessel Arrival Date At Port of Entry"] is null then true else false),
+    //9th date step
+    #"Blank check Actual Vessel Arrival Date At Port of Entry" = Table.AddColumn(#"Blank check Estimated Vessel Arrival Date At Port of Entry", "Blank check Actual Vessel Arrival Date At Port of Entry", each 
+    if [#"Actual Vessel Arrival Date At Port of Entry"] is null and (([#"Port Of Exit"] is null) and ([#"Port Of Arrival"] is null) and ([#"Container Departed Port Of Entry Date"] is null) and ([#"Container Arrived At Local Rail Yard Date"] is null) and ([#"Container Departed Local Rail Yard Date"] is null)
+    and ([#"Container Delivered To Destination Date"] is null))then true else if [#"Actual Vessel Arrival Date At Port of Entry"] is null then true else false),
+    //10th date step
+    #"Blank check Port Of Exit" = Table.AddColumn(#"Blank check Actual Vessel Arrival Date At Port of Entry", "Blank check Port Of Exit", each 
+    if [#"Port Of Exit"] is null and (([#"Port Of Arrival"] is null) and ([#"Container Departed Port Of Entry Date"] is null) and ([#"Container Arrived At Local Rail Yard Date"] is null) and ([#"Container Departed Local Rail Yard Date"] is null)
+    and ([#"Container Delivered To Destination Date"] is null))then true else if [#"Port Of Exit"] is null then true else false),
+    //11th date step
+    #"Blank check Port Of Arrival" = Table.AddColumn(#"Blank check Port Of Exit", "Blank check Port Of Arrival", each 
+    if [#"Port Of Arrival"] is null and (([#"Container Departed Port Of Entry Date"] is null) and ([#"Container Arrived At Local Rail Yard Date"] is null) and ([#"Container Departed Local Rail Yard Date"] is null)
+    and ([#"Container Delivered To Destination Date"] is null))then true else if [#"Port Of Arrival"] is null then true else false),
+    //12th date step
+    #"Blank check Container Departed Port Of Entry Date" = Table.AddColumn(#"Blank check Port Of Arrival", "Blank check Container Departed Port Of Entry Date", each 
+    if [#"Container Departed Port Of Entry Date"] is null and (([#"Container Arrived At Local Rail Yard Date"] is null) and ([#"Container Departed Local Rail Yard Date"] is null)
+    and ([#"Container Delivered To Destination Date"] is null))then true else if [#"Container Departed Port Of Entry Date"] is null then true else false),
+    //13th date step
+    #"Blank check Container Arrived At Local Rail Yard Date" = Table.AddColumn(#"Blank check Container Departed Port Of Entry Date", "Blank check Container Arrived At Local Rail Yard Date", each 
+    if [#"Container Arrived At Local Rail Yard Date"] is null and (([#"Container Departed Local Rail Yard Date"] is null)
+    and ([#"Container Delivered To Destination Date"] is null))then true else if [#"Container Arrived At Local Rail Yard Date"] is null then true else false),
+    //not date setps
+    #"Blank check Container Last Free Day (LFD)" = Table.AddColumn(#"Blank check Container Arrived At Local Rail Yard Date", "Blank check Container Last Free Day (LFD)", each if [#"Container Last Free Day (LFD)"] is null then true else false),
+    #"Blank check Container Held At Rail" = Table.AddColumn(#"Blank check Container Last Free Day (LFD)", "Blank check Container Held At Rail", each if [#"Container Held At Rail"] is null then true else false),
+    //14th date step
+    #"Blank check Container Departed Local Rail Yard Date" = Table.AddColumn(#"Blank check Container Held At Rail", "Blank check Container Departed Local Rail Yard Date", each 
+    if [#"Container Departed Local Rail Yard Date"] is null and (([#"Container Delivered To Destination Date"] is null))then true else if [#"Container Departed Local Rail Yard Date"] is null then true else false),
+    //15th date step
+    //sevendaysago = Date.AddDays(Datetime.LocalNow(),-7),
+    //and ([#"Container Departed Local Rail Yard Date"] > sevendaysago))
+    #"Blank check Container Delivered To Destination Date" = Table.AddColumn(#"Blank check Container Departed Local Rail Yard Date", "Blank check Container Delivered To Destination Date", each if ([#"Container Delivered To Destination Date"] is null) then true else false),
+    //not part of date logic
+    #"Blank check Returned To Local Rail Yard (Empty) Date" = Table.AddColumn(#"Blank check Container Delivered To Destination Date", "Blank check Returned To Local Rail Yard (Empty) Date", each if [#"Returned To Local Rail Yard (Empty) Date"] is null then true else false),
+    #"Blank check Incoterm" = Table.AddColumn(#"Blank check Returned To Local Rail Yard (Empty) Date", "Blank check Incoterm", each if [#"Incoterm"] is null then true else false),
+    #"Blank check Gross Weight (KG)" = Table.AddColumn(#"Changed Type", "Blank check Gross Weight (KG)", each if [#"Gross Weight (KG)"] is null then true else false),
+    #"Blank check Chargeable Weight (KG)" = Table.AddColumn(#"Blank check Incoterm", "Blank check Chargeable Weight (KG)", each if [#"Chargeable Weight (KG)"] is null then true else false),
+    #"Blank check Total Volume (CBM)" = Table.AddColumn(#"Blank check Chargeable Weight (KG)", "Blank check Total Volume (CBM)", each if [#"Total Volume (CBM)"] is null then true else false),
+    #"Blank check Total Container Utilization" = Table.AddColumn(#"Blank check Total Volume (CBM)", "Blank check Total Container Utilization", each if [#"Total Container Utilization"] is null then true else false),
+    #"Blank check Origin Name" = Table.AddColumn(#"Blank check Total Container Utilization", "Blank check Origin Name", each if [#"Origin Name"] is null then true else false),
+    #"Blank check Origin City" = Table.AddColumn(#"Blank check Origin Name", "Blank check Origin City", each if [#"Origin City"] is null then true else false),
+    #"Blank check Origin Country" = Table.AddColumn(#"Blank check Origin City", "Blank check Origin Country", each if [#"Origin Country"] is null then true else false),
+    #"Blank check Destination Name" = Table.AddColumn(#"Blank check Origin Country", "Blank check Destination Name", each if [#"Destination Name"] is null then true else false),
+    #"Blank check Destination City" = Table.AddColumn(#"Blank check Destination Name", "Blank check Destination City", each if [#"Destination City"] is null then true else false),
+    #"Blank check Destination Country" = Table.AddColumn(#"Blank check Destination City", "Blank check Destination Country", each if [#"Destination Country"] is null then true else false),
+    #"Blank check Shipment #" = Table.AddColumn(#"Blank check Destination Country", "Blank check Shipment #", each if [#"Shipment #"] is null then true else false),
+    #"Blank check Shipment Status" = Table.AddColumn(#"Blank check Shipment #", "Blank check Shipment Status", each if [#"Shipment Status"] is null then true else false),
+    #"Blank check Comments" = Table.AddColumn(#"Blank check Shipment Status", "Blank check Comments", each if [#"Comments"] is null then true else false)
+
+in
+    #"Blank check Comments"
+
+//This is old code as this check is only needed after the FCL check is done. I moved this to a seperate check to make sure the excel file kept it's speed as it flagged a lot of errors also flagged by the FCL error check and which would be solved by the FCL error check.
+LCL_blank_error_check
+
+let
+    Source = LCL_data,
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Lane ID", type text}, {"Origin GSDB ", type text}, {"Destination GSDB ", type text}, {"Mode", type text}, {"Carrier", type text}, {"Vessel Name", type text}, {"Voyage #", type text}, {"Booking #", type text}, {"Container #", type text}, {"Container Size", type text}, {"Master Bill Of Lading (MBOL)", type text}, {"House Bill Of Lading (HBOL)", Int64.Type}, {"Container Booking Requested Date", type date}, {"Container Booking Confirmation Date", type date}, {"Collection Note Received Date", type date}, {"Container Pick Up Date ", type date}, {"Arrived At Consol Center", type date}, {"Arrived At Port of Exit Date", type any}, {"Vessel Loading Date", type date}, {"Estimated Vessel Departure Date At Port of Exit", type date}, {"Actual Vessel Departure Date At Port of Exit", type date}, {"Estimated Vessel Arrival Date At Port of Entry", type date}, {"Actual Vessel Arrival Date At Port of Entry", type date}, {"Port Of Exit", type text}, {"Port Of Arrival", type text}, {"Container Departed Port Of Entry Date", type any}, {"Container Arrived At Local Rail Yard Date", type any}, {"Container Last Free Day (LFD)", type any}, {"Container Held At Rail", type any}, {"Container Departed Local Rail Yard Date", type any}, {"Container PrePull", type any}, {"Container Delivered To Destination Date", type date}, {"Returned To Local Rail Yard (Empty) Date", type any}, {"MMP Received Date", type any}, {"Incoterm", type text}, {"Pallet", Int64.Type}, {"Gross Weight (KG)", type number}, {"Chargeable Weight (KG)", type number}, {"Total Volume (CBM)", type number}, {"Total Container Utilization", type number}, {"Origin Name", type text}, {"Origin City", type text}, {"Origin Country", type text}, {"Destination Name", type text}, {"Destination City", type text}, {"Destination Country", type text}, {"Door To Port Transit Time", type any}, {"Port To Port Transit Time", Int64.Type}, {"Port To Door Transit Time", Int64.Type}, {"Total Transit Time", Int64.Type}, {"Shipment #", type text}, {"Shipment Status", type any}, {"Comments", type text}, {"Reason For Delay", type any}}),
+    #"Removed Columns" = Table.RemoveColumns(#"Changed Type",{"Container Departed Port Of Entry Date", "Container Arrived At Local Rail Yard Date", "Container Last Free Day (LFD)", "Container Held At Rail", "Container Departed Local Rail Yard Date", "Container PrePull", "Returned To Local Rail Yard (Empty) Date", "Shipment Status", "MMP Received Date"}),
+    #"Merged Queries" = Table.NestedJoin(#"Removed Columns", {"Container #"}, FCL_data, {"Container #"}, "FCL_data", JoinKind.LeftOuter),
+    #"Expanded FCL_data" = Table.ExpandTableColumn(#"Merged Queries", "FCL_data", {"Container Departed Port Of Entry Date", "Container Arrived At Local Rail Yard Date", "Container Last Free Day (LFD)", "Container Held At Rail", "Container Departed Local Rail Yard Date", "Container PrePull", "Returned To Local Rail Yard (Empty) Date", "MMP Received Date", "Shipment Status"}, {"FCL_data.Container Departed Port Of Entry Date", "FCL_data.Container Arrived At Local Rail Yard Date", "FCL_data.Container Last Free Day (LFD)", "FCL_data.Container Held At Rail", "FCL_data.Container Departed Local Rail Yard Date", "FCL_data.Container PrePull", "FCL_data.Returned To Local Rail Yard (Empty) Date", "FCL_data.MMP Received Date", "FCL_data.Shipment Status"}),
+
+    // check for blanks section
     #"Blank check Lane ID" = Table.AddColumn(#"Changed Type", "Blank check Lane ID", each if [#"Lane ID"] is null then true else false),
     #"Blank check Origin GSDB " = Table.AddColumn(#"Blank check Lane ID", "Blank check Origin GSDB ", each if [#"Origin GSDB "] is null then true else false),
     #"Blank check Destination GSDB " = Table.AddColumn(#"Blank check Origin GSDB ", "Blank check Destination GSDB ", each if [#"Destination GSDB "] is null then true else false),
@@ -65,7 +207,28 @@ let
 in
     #"Blank check Comments"
 
-FCL blank checking per shipment grouping (used the same for LCL as the columns where the same)
+Ford_contract_FCL
+
+let
+    Source = Excel.Workbook(Web.Contents("https://dsvcorp.sharepoint.com/teams/FORDAnalytics/Shared%20Documents/General/Ford%20FCSD%20import%20error%20check/transit_times_budget_9_21_2023.xlsx"), null, true),
+    Custom1 = Source{[Item="FCL",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(Custom1, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Column1", type text}, {"LANE ID", type text}, {"Supplier country", type text}, {"Origin GSDB", type text}, {"Shipper", type text}, {"Destination City", type text}, {"Destination GSDB", type text}, {"Carrier", type text}, {"Origin Port", type text}, {"Transload Port", type text}, {"Destination Port", type text}, {"TOTAL TT", Int64.Type}, {"Target PU-VS", Int64.Type}, {"Avg PU-VS", type any}, {"Target VS-VA", Int64.Type}, {"Avg VS-VA", type any}, {"Target VA-RD", Int64.Type}, {"Avg VA-RD", type any}, {"Target RD-CD", Int64.Type}, {"Avg RD-CD", type any}, {"Target Overall TT", Int64.Type}, {"Avg Overall TT", type any}, {"# of Shipments by Lane", type any}, {"PU-Con Target", Int64.Type}, {"Con-Ship Target", Int64.Type}})
+in
+    #"Changed Type"
+
+Ford_contract_LCL
+
+let
+    Source = Excel.Workbook(Web.Contents("https://dsvcorp.sharepoint.com/teams/FORDAnalytics/Shared%20Documents/General/Ford%20FCSD%20import%20error%20check/transit_times_budget_9_21_2023.xlsx"), null, true),
+    Custom1 = Source{[Item="BCN_LCL",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(Custom1, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Column1", type text}, {"LANE ID", type text}, {"Supplier country", type text}, {"Shipper", type text}, {"Destination City", type text}, {"Destination GSDB", type text}, {"Carrier", type text}, {"Origin Port", type text}, {"Transload Port", type text}, {"Destination Port", type text}, {"TOTAL TT", Int64.Type}, {"Target PU-AC", Int64.Type}, {"Avg PU-AC", type any}, {"Target AC-VS", Int64.Type}, {"Avg AC-VS", type any}, {"Target VS-VA", Int64.Type}, {"Avg VS-VA", type any}, {"Target VA-RD", Int64.Type}, {"Avg VA-RD", type any}, {"Target RD-CD", Int64.Type}, {"Avg RD-CD", type any}, {"Target Overall TT", Int64.Type}, {"Avg Overall TT", type any}, {"# of Shipments by Lane", type any}, {"PU-Con Target", Int64.Type}, {"Con-Ship Target", Int64.Type}})
+in
+    #"Changed Type"
+
+FCL_list_blank_error_check
+
 let
     Source = FCL_blank_error_check,
 
@@ -515,7 +678,840 @@ let
     #"Added error type 45" = Table.AddColumn(#"Expanded GroupedData45", "Error", each "Blank check Comments"),
     #"Removed Columns45" = Table.RemoveColumns(#"Added error type 45",{"GroupedData.BooleanColumn"}),
     //Appending datasets 45 "Blank check Comments"
-    #"Appended45" = Table.Combine({#"Appended44", #"Removed Columns45"})
+    #"Appended45" = Table.Combine({#"Appended44", #"Removed Columns45"}),
+    #"Sorted Rows" = Table.Sort(Appended45,{{"Shipment #", Order.Ascending}})
+in
+    #"Sorted Rows"
 
+
+//This is code I just save but was poorly desigened. I used a filter moving forward.
+LCL_list_blank_error_check
+
+let
+    Source = LCL_blank_error_check,
+
+    // Group by "Blank check Lane ID" where "BooleanColumn" is true
+    GroupedTable = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable = Table.SelectRows(GroupedTable, each [GroupedData][#"Blank check Lane ID"]{0} = true),
+    #"Expanded GroupedData" = Table.ExpandTableColumn(FilteredTable, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type" = Table.AddColumn(#"Expanded GroupedData", "Error", each "Blank Lane ID"),
+    #"Removed Columns" = Table.RemoveColumns(#"Added error type",{"GroupedData.BooleanColumn"}),
+
+    // Group by "Blank check Origin GSDB " where "BooleanColumn" is true
+    GroupedTable2 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable2 = Table.SelectRows(GroupedTable2, each [GroupedData][#"Blank check Origin GSDB "]{0} = true),
+    #"Expanded GroupedData2" = Table.ExpandTableColumn(FilteredTable2, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 2" = Table.AddColumn(#"Expanded GroupedData2", "Error", each "Blank check Origin GSDB "),
+    #"Removed Columns2" = Table.RemoveColumns(#"Added error type 2",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 2 "Blank check RefNums (SCN)" and "Blank check Origin GSDB "
+    #"Appended2" = Table.Combine({#"Removed Columns", #"Removed Columns2"}),
+
+    // Group by "Blank check Destination GSDB  " where "BooleanColumn" is true
+    GroupedTable3 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable3 = Table.SelectRows(GroupedTable3, each [GroupedData][#"Blank check Destination GSDB "]{0} = true),
+    #"Expanded GroupedData3" = Table.ExpandTableColumn(FilteredTable3, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 3" = Table.AddColumn(#"Expanded GroupedData3", "Error", each "Blank check Destination GSDB "),
+    #"Removed Columns3" = Table.RemoveColumns(#"Added error type 3",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 3 "Blank check RefNums (SCN)" and "Blank Destination GSDB "
+    #"Appended3" = Table.Combine({#"Appended2", #"Removed Columns3"}),
+
+    // Group by "Blank check Mode" where "BooleanColumn" is true
+    GroupedTable4 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable4 = Table.SelectRows(GroupedTable4, each [GroupedData][#"Blank check Mode"]{0} = true),
+    #"Expanded GroupedData4" = Table.ExpandTableColumn(FilteredTable4, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 4" = Table.AddColumn(#"Expanded GroupedData4", "Error", each "Blank check Mode"),
+    #"Removed Columns4" = Table.RemoveColumns(#"Added error type 4",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 4 "Blank check RefNums (SCN)" and "Blank Mode"
+    #"Appended4" = Table.Combine({#"Appended3", #"Removed Columns4"}),
+
+    // Group by "Blank check Carrier" where "BooleanColumn" is true
+    GroupedTable5 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable5 = Table.SelectRows(GroupedTable5, each [GroupedData][#"Blank check Carrier"]{0} = true),
+    #"Expanded GroupedData5" = Table.ExpandTableColumn(FilteredTable5, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 5" = Table.AddColumn(#"Expanded GroupedData5", "Error", each "Blank check Carrier"),
+    #"Removed Columns5" = Table.RemoveColumns(#"Added error type 5",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 5 "Blank check Carrier"
+    #"Appended5" = Table.Combine({#"Appended4", #"Removed Columns5"}),
+
+    // Group by "Blank check Vessel Name" where "BooleanColumn" is true
+    GroupedTable6 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable6 = Table.SelectRows(GroupedTable6, each [GroupedData][#"Blank check Vessel Name"]{0} = true),
+    #"Expanded GroupedData6" = Table.ExpandTableColumn(FilteredTable6, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 6" = Table.AddColumn(#"Expanded GroupedData6", "Error", each "Blank check Vessel Name"),
+    #"Removed Columns6" = Table.RemoveColumns(#"Added error type 6",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 6 "Blank check Vessel Name"
+    #"Appended6" = Table.Combine({#"Appended5", #"Removed Columns6"}),
+
+    // Group by "Blank check Voyage #" where "BooleanColumn" is true
+    GroupedTable7 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable7 = Table.SelectRows(GroupedTable7, each [GroupedData][#"Blank check Voyage #"]{0} = true),
+    #"Expanded GroupedData7" = Table.ExpandTableColumn(FilteredTable7, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 7" = Table.AddColumn(#"Expanded GroupedData7", "Error", each "Blank check Voyage #"),
+    #"Removed Columns7" = Table.RemoveColumns(#"Added error type 7",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 7 "Blank check Vessel Name"
+    #"Appended7" = Table.Combine({#"Appended6", #"Removed Columns7"}),
+
+    // Group by "Blank check Booking #" where "BooleanColumn" is true
+    GroupedTable8 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable8 = Table.SelectRows(GroupedTable8, each [GroupedData][#"Blank check Booking #"]{0} = true),
+    #"Expanded GroupedData8" = Table.ExpandTableColumn(FilteredTable8, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 8" = Table.AddColumn(#"Expanded GroupedData8", "Error", each "Blank check Booking #"),
+    #"Removed Columns8" = Table.RemoveColumns(#"Added error type 8",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 7 "Blank check Booking #"
+    #"Appended8" = Table.Combine({#"Appended7", #"Removed Columns8"}),
+
+    // Group by "Blank check Container #" where "BooleanColumn" is true
+    GroupedTable9 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable9 = Table.SelectRows(GroupedTable9, each [GroupedData][#"Blank check Container #"]{0} = true),
+    #"Expanded GroupedData9" = Table.ExpandTableColumn(FilteredTable9, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 9" = Table.AddColumn(#"Expanded GroupedData9", "Error", each "Blank check Container #"),
+    #"Removed Columns9" = Table.RemoveColumns(#"Added error type 9",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 9 "Blank check Container #"
+    #"Appended9" = Table.Combine({#"Appended8", #"Removed Columns9"}),
+
+    // Group by "Blank check Container Size" where "BooleanColumn" is true
+    GroupedTable10 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable10 = Table.SelectRows(GroupedTable10, each [GroupedData][#"Blank check Container Size"]{0} = true),
+    #"Expanded GroupedData10" = Table.ExpandTableColumn(FilteredTable10, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 10" = Table.AddColumn(#"Expanded GroupedData10", "Error", each "Blank check Container #"),
+    #"Removed Columns10" = Table.RemoveColumns(#"Added error type 10",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 10 "Blank check Container Size"
+    #"Appended10" = Table.Combine({#"Appended9", #"Removed Columns10"}),
+
+    // Group by "Blank check Master Bill Of Lading (MBOL)" where "BooleanColumn" is true
+    GroupedTable11 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable11 = Table.SelectRows(GroupedTable11, each [GroupedData][#"Blank check Master Bill Of Lading (MBOL)"]{0} = true),
+    #"Expanded GroupedData11" = Table.ExpandTableColumn(FilteredTable11, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 11" = Table.AddColumn(#"Expanded GroupedData11", "Error", each "Blank check Master Bill Of Lading (MBOL)"),
+    #"Removed Columns11" = Table.RemoveColumns(#"Added error type 11",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 11 "Blank check Master Bill Of Lading (MBOL)"
+    #"Appended11" = Table.Combine({#"Appended10", #"Removed Columns11"}),
+
+    // Group by "Blank check House Bill Of Lading (HBOL)" where "BooleanColumn" is true
+    GroupedTable12 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable12 = Table.SelectRows(GroupedTable12, each [GroupedData][#"Blank check Master Bill Of Lading (MBOL)"]{0} = true),
+    #"Expanded GroupedData12" = Table.ExpandTableColumn(FilteredTable12, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 12" = Table.AddColumn(#"Expanded GroupedData12", "Error", each "Blank check House Bill Of Lading (HBOL)"),
+    #"Removed Columns12" = Table.RemoveColumns(#"Added error type 12",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 12 "Blank check House Bill Of Lading (HBOL)"
+    #"Appended12" = Table.Combine({#"Appended11", #"Removed Columns12"}),
+
+    // Group by "Blank check Container Booking Requested Date" where "BooleanColumn" is true
+    GroupedTable13 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable13 = Table.SelectRows(GroupedTable13, each [GroupedData][#"Blank check Container Booking Requested Date"]{0} = true),
+    #"Expanded GroupedData13" = Table.ExpandTableColumn(FilteredTable13, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 13" = Table.AddColumn(#"Expanded GroupedData13", "Error", each "Blank check Container Booking Requested Date"),
+    #"Removed Columns13" = Table.RemoveColumns(#"Added error type 13",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 13 "Blank check Container Booking Requested Date"
+    #"Appended13" = Table.Combine({#"Appended12", #"Removed Columns13"}),
+
+    // Group by "Blank check Container Booking Confirmation Date" where "BooleanColumn" is true
+    GroupedTable14 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable14 = Table.SelectRows(GroupedTable14, each [GroupedData][#"Blank check Container Booking Confirmation Date"]{0} = true),
+    #"Expanded GroupedData14" = Table.ExpandTableColumn(FilteredTable14, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 14" = Table.AddColumn(#"Expanded GroupedData14", "Error", each "Blank check Container Booking Confirmation Date"),
+    #"Removed Columns14" = Table.RemoveColumns(#"Added error type 14",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 14 "Blank check Container Booking Confirmation Date"
+    #"Appended14" = Table.Combine({#"Appended13", #"Removed Columns14"}),
+
+    // Group by "Blank check Collection Note Received Date" where "BooleanColumn" is true
+    GroupedTable15 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable15 = Table.SelectRows(GroupedTable15, each [GroupedData][#"Blank check Collection Note Received Date"]{0} = true),
+    #"Expanded GroupedData15" = Table.ExpandTableColumn(FilteredTable15, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 15" = Table.AddColumn(#"Expanded GroupedData15", "Error", each "Blank check Collection Note Received Date"),
+    #"Removed Columns15" = Table.RemoveColumns(#"Added error type 15",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 15 "Blank check Container Booking Confirmation Date"
+    #"Appended15" = Table.Combine({#"Appended14", #"Removed Columns15"}),
+
+    // Group by "Blank check Container Pick Up Date " where "BooleanColumn" is true
+    GroupedTable16 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable16 = Table.SelectRows(GroupedTable16, each [GroupedData][#"Blank check Container Pick Up Date "]{0} = true),
+    #"Expanded GroupedData16" = Table.ExpandTableColumn(FilteredTable16, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 16" = Table.AddColumn(#"Expanded GroupedData16", "Error", each "Blank check Container Pick Up Date "),
+    #"Removed Columns16" = Table.RemoveColumns(#"Added error type 16",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 16 "Blank check Container Pick Up Date "
+    #"Appended16" = Table.Combine({#"Appended15", #"Removed Columns16"}),
+
+    // Group by "Blank check Arrived At Consol Center" where "BooleanColumn" is true
+    GroupedTable17 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable17 = Table.SelectRows(GroupedTable17, each [GroupedData][#"Blank check Arrived At Consol Center"]{0} = true),
+    #"Expanded GroupedData17" = Table.ExpandTableColumn(FilteredTable17, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 17" = Table.AddColumn(#"Expanded GroupedData17", "Error", each "Blank check Arrived At Consol Center"),
+    #"Removed Columns17" = Table.RemoveColumns(#"Added error type 17",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 17 "Blank check Arrived At Consol Center"
+    #"Appended17" = Table.Combine({#"Appended16", #"Removed Columns17"}),
+
+    // Group by "Blank check Arrived At Port of Exit Date" where "BooleanColumn" is true
+    GroupedTable18 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable18 = Table.SelectRows(GroupedTable18, each [GroupedData][#"Blank check Arrived At Port of Exit Date"]{0} = true),
+    #"Expanded GroupedData18" = Table.ExpandTableColumn(FilteredTable18, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 18" = Table.AddColumn(#"Expanded GroupedData18", "Error", each "Blank check Arrived At Port of Exit Date"),
+    #"Removed Columns18" = Table.RemoveColumns(#"Added error type 18",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 18 "Blank check Arrived At Port of Exit Date"
+    #"Appended18" = Table.Combine({#"Appended17", #"Removed Columns18"}),
+
+    // Group by "Blank check Vessel Loading Date" where "BooleanColumn" is true
+    GroupedTable19 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable19 = Table.SelectRows(GroupedTable19, each [GroupedData][#"Blank check Vessel Loading Date"]{0} = true),
+    #"Expanded GroupedData19" = Table.ExpandTableColumn(FilteredTable19, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 19" = Table.AddColumn(#"Expanded GroupedData19", "Error", each "Blank check Vessel Loading Date"),
+    #"Removed Columns19" = Table.RemoveColumns(#"Added error type 19",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 19 "Blank check Vessel Loading Date"
+    #"Appended19" = Table.Combine({#"Appended18", #"Removed Columns19"}),
+
+    // Group by "Blank check Estimated Vessel Departure Date At Port of Exit" where "BooleanColumn" is true
+    GroupedTable20 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable20 = Table.SelectRows(GroupedTable20, each [GroupedData][#"Blank check Estimated Vessel Departure Date At Port of Exit"]{0} = true),
+    #"Expanded GroupedData20" = Table.ExpandTableColumn(FilteredTable20, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 20" = Table.AddColumn(#"Expanded GroupedData20", "Error", each "Blank check Estimated Vessel Departure Date At Port of Exit"),
+    #"Removed Columns20" = Table.RemoveColumns(#"Added error type 20",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 20 "Blank check Vessel Loading Date"
+    #"Appended20" = Table.Combine({#"Appended19", #"Removed Columns20"}),
+
+    // Group by "Blank check Actual Vessel Departure Date At Port of Exit" where "BooleanColumn" is true
+    GroupedTable21 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable21 = Table.SelectRows(GroupedTable21, each [GroupedData][#"Blank check Actual Vessel Departure Date At Port of Exit"]{0} = true),
+    #"Expanded GroupedData21" = Table.ExpandTableColumn(FilteredTable21, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 21" = Table.AddColumn(#"Expanded GroupedData21", "Error", each "Blank check Actual Vessel Departure Date At Port of Exit"),
+    #"Removed Columns21" = Table.RemoveColumns(#"Added error type 21",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 21 "Blank check Vessel Loading Date"
+    #"Appended21" = Table.Combine({#"Appended20", #"Removed Columns21"}),
+
+    // Group by "Blank check Estimated Vessel Arrival Date At Port of Entry" where "BooleanColumn" is true
+    GroupedTable22 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable22 = Table.SelectRows(GroupedTable22, each [GroupedData][#"Blank check Estimated Vessel Arrival Date At Port of Entry"]{0} = true),
+    #"Expanded GroupedData22" = Table.ExpandTableColumn(FilteredTable22, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 22" = Table.AddColumn(#"Expanded GroupedData22", "Error", each "Blank check Estimated Vessel Arrival Date At Port of Entry"),
+    #"Removed Columns22" = Table.RemoveColumns(#"Added error type 22",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 22 "Blank check Estimated Vessel Arrival Date At Port of Entry"
+    #"Appended22" = Table.Combine({#"Appended21", #"Removed Columns22"}),
+
+    // Group by "Blank check Actual Vessel Arrival Date At Port of Entry" where "BooleanColumn" is true
+    GroupedTable23 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable23 = Table.SelectRows(GroupedTable23, each [GroupedData][#"Blank check Actual Vessel Arrival Date At Port of Entry"]{0} = true),
+    #"Expanded GroupedData23" = Table.ExpandTableColumn(FilteredTable23, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 23" = Table.AddColumn(#"Expanded GroupedData23", "Error", each "Blank check Actual Vessel Arrival Date At Port of Entry"),
+    #"Removed Columns23" = Table.RemoveColumns(#"Added error type 23",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 23 "Blank check Actual Vessel Arrival Date At Port of Entry"
+    #"Appended23" = Table.Combine({#"Appended22", #"Removed Columns23"}),
+
+    // Group by "Blank check Port Of Exit" where "BooleanColumn" is true
+    GroupedTable24 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable24 = Table.SelectRows(GroupedTable24, each [GroupedData][#"Blank check Port Of Exit"]{0} = true),
+    #"Expanded GroupedData24" = Table.ExpandTableColumn(FilteredTable24, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 24" = Table.AddColumn(#"Expanded GroupedData24", "Error", each "Blank check Port Of Exit"),
+    #"Removed Columns24" = Table.RemoveColumns(#"Added error type 24",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 24 "Blank check Port Of Exit"
+    #"Appended24" = Table.Combine({#"Appended23", #"Removed Columns24"}),
+
+    // Group by "Blank check Port Of Arrival" where "BooleanColumn" is true
+    GroupedTable25 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable25 = Table.SelectRows(GroupedTable25, each [GroupedData][#"Blank check Port Of Arrival"]{0} = true),
+    #"Expanded GroupedData25" = Table.ExpandTableColumn(FilteredTable25, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 25" = Table.AddColumn(#"Expanded GroupedData25", "Error", each "Blank check Port Of Arrival"),
+    #"Removed Columns25" = Table.RemoveColumns(#"Added error type 25",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 25 "Blank check Port Of Arrival"
+    #"Appended25" = Table.Combine({#"Appended24", #"Removed Columns25"}),
+
+    // Group by "Blank check Container Departed Port Of Entry Date" where "BooleanColumn" is true
+    GroupedTable26 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable26 = Table.SelectRows(GroupedTable26, each [GroupedData][#"Blank check Container Departed Port Of Entry Date"]{0} = true),
+    #"Expanded GroupedData26" = Table.ExpandTableColumn(FilteredTable26, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 26" = Table.AddColumn(#"Expanded GroupedData26", "Error", each "Blank check Container Departed Port Of Entry Date"),
+    #"Removed Columns26" = Table.RemoveColumns(#"Added error type 26",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 26 "Blank check Container Departed Port Of Entry Date"
+    #"Appended26" = Table.Combine({#"Appended25", #"Removed Columns26"}),
+
+    // Group by "Blank check Container Arrived At Local Rail Yard Date" where "BooleanColumn" is true
+    GroupedTable27 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable27 = Table.SelectRows(GroupedTable27, each [GroupedData][#"Blank check Container Arrived At Local Rail Yard Date"]{0} = true),
+    #"Expanded GroupedData27" = Table.ExpandTableColumn(FilteredTable27, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 27" = Table.AddColumn(#"Expanded GroupedData27", "Error", each "Blank check Container Arrived At Local Rail Yard Date"),
+    #"Removed Columns27" = Table.RemoveColumns(#"Added error type 27",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 27 "Blank check Container Arrived At Local Rail Yard Date"
+    #"Appended27" = Table.Combine({#"Appended26", #"Removed Columns27"}),
+
+    // Group by "Blank check Container Last Free Day (LFD)" where "BooleanColumn" is true
+    GroupedTable28 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable28 = Table.SelectRows(GroupedTable28, each [GroupedData][#"Blank check Container Last Free Day (LFD)"]{0} = true),
+    #"Expanded GroupedData28" = Table.ExpandTableColumn(FilteredTable28, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 28" = Table.AddColumn(#"Expanded GroupedData28", "Error", each "Blank check Container Last Free Day (LFD)"),
+    #"Removed Columns28" = Table.RemoveColumns(#"Added error type 28",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 28 "Blank check Container Last Free Day (LFD)"
+    #"Appended28" = Table.Combine({#"Appended27", #"Removed Columns28"}),
+
+    // Group by "Blank check Container Held At Rail" where "BooleanColumn" is true
+    GroupedTable29 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable29 = Table.SelectRows(GroupedTable29, each [GroupedData][#"Blank check Container Held At Rail"]{0} = true),
+    #"Expanded GroupedData29" = Table.ExpandTableColumn(FilteredTable29, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 29" = Table.AddColumn(#"Expanded GroupedData29", "Error", each "Blank check Container Held At Rail"),
+    #"Removed Columns29" = Table.RemoveColumns(#"Added error type 29",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 29 "Blank check Container Held At Rail"
+    #"Appended29" = Table.Combine({#"Appended28", #"Removed Columns29"}),
+
+    // Group by "Blank check Container Departed Local Rail Yard Date" where "BooleanColumn" is true
+    GroupedTable30 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable30 = Table.SelectRows(GroupedTable30, each [GroupedData][#"Blank check Container Departed Local Rail Yard Date"]{0} = true),
+    #"Expanded GroupedData30" = Table.ExpandTableColumn(FilteredTable30, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 30" = Table.AddColumn(#"Expanded GroupedData30", "Error", each "Blank check Container Departed Local Rail Yard Date"),
+    #"Removed Columns30" = Table.RemoveColumns(#"Added error type 30",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 30 "Blank check Container Departed Local Rail Yard Date"
+    #"Appended30" = Table.Combine({#"Appended29", #"Removed Columns30"}),
+
+    // Group by "Blank check Container Delivered To Destination Date" where "BooleanColumn" is true
+    GroupedTable31 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable31 = Table.SelectRows(GroupedTable31, each [GroupedData][#"Blank check Container Delivered To Destination Date"]{0} = true),
+    #"Expanded GroupedData31" = Table.ExpandTableColumn(FilteredTable31, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 31" = Table.AddColumn(#"Expanded GroupedData31", "Error", each "Blank check Container Delivered To Destination Date"),
+    #"Removed Columns31" = Table.RemoveColumns(#"Added error type 31",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 31 "Blank check Container Delivered To Destination Date"
+    #"Appended31" = Table.Combine({#"Appended30", #"Removed Columns31"}),
+
+    // Group by "Blank check Returned To Local Rail Yard (Empty) Date" where "BooleanColumn" is true
+    GroupedTable32 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable32 = Table.SelectRows(GroupedTable32, each [GroupedData][#"Blank check Returned To Local Rail Yard (Empty) Date"]{0} = true),
+    #"Expanded GroupedData32" = Table.ExpandTableColumn(FilteredTable32, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 32" = Table.AddColumn(#"Expanded GroupedData32", "Error", each "Blank check Returned To Local Rail Yard (Empty) Date"),
+    #"Removed Columns32" = Table.RemoveColumns(#"Added error type 32",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 32 "Blank check Returned To Local Rail Yard (Empty) Date"
+    #"Appended32" = Table.Combine({#"Appended31", #"Removed Columns32"}),
+
+    // Group by "Blank check Incoterm" where "BooleanColumn" is true
+    GroupedTable33 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable33 = Table.SelectRows(GroupedTable33, each [GroupedData][#"Blank check Incoterm"]{0} = true),
+    #"Expanded GroupedData33" = Table.ExpandTableColumn(FilteredTable33, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 33" = Table.AddColumn(#"Expanded GroupedData33", "Error", each "Blank check Incoterm"),
+    #"Removed Columns33" = Table.RemoveColumns(#"Added error type 33",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 33 "Blank check Incoterm"
+    #"Appended33" = Table.Combine({#"Appended32", #"Removed Columns33"}),
+
+    // Group by "Blank check Chargeable Weight (KG)" where "BooleanColumn" is true
+    GroupedTable34 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable34 = Table.SelectRows(GroupedTable34, each [GroupedData][#"Blank check Chargeable Weight (KG)"]{0} = true),
+    #"Expanded GroupedData34" = Table.ExpandTableColumn(FilteredTable34, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 34" = Table.AddColumn(#"Expanded GroupedData34", "Error", each "Blank check Chargeable Weight (KG)"),
+    #"Removed Columns34" = Table.RemoveColumns(#"Added error type 34",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 34 "Blank check Chargeable Weight (KG)"
+    #"Appended34" = Table.Combine({#"Appended33", #"Removed Columns34"}),
+
+    // Group by "Blank check Total Volume (CBM)" where "BooleanColumn" is true
+    GroupedTable35 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable35 = Table.SelectRows(GroupedTable35, each [GroupedData][#"Blank check Total Volume (CBM)"]{0} = true),
+    #"Expanded GroupedData35" = Table.ExpandTableColumn(FilteredTable35, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 35" = Table.AddColumn(#"Expanded GroupedData35", "Error", each "Blank check Total Volume (CBM)"),
+    #"Removed Columns35" = Table.RemoveColumns(#"Added error type 35",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 35 "Blank check Total Volume (CBM)"
+    #"Appended35" = Table.Combine({#"Appended34", #"Removed Columns35"}),
+
+    // Group by "Blank check Total Container Utilization" where "BooleanColumn" is true
+    GroupedTable36 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable36 = Table.SelectRows(GroupedTable36, each [GroupedData][#"Blank check Total Container Utilization"]{0} = true),
+    #"Expanded GroupedData36" = Table.ExpandTableColumn(FilteredTable36, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 36" = Table.AddColumn(#"Expanded GroupedData36", "Error", each "Blank check Total Container Utilization"),
+    #"Removed Columns36" = Table.RemoveColumns(#"Added error type 36",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 36 "Blank check Total Container Utilization"
+    #"Appended36" = Table.Combine({#"Appended35", #"Removed Columns36"}),
+
+    // Group by "Blank check Origin Name" where "BooleanColumn" is true
+    GroupedTable37 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable37 = Table.SelectRows(GroupedTable37, each [GroupedData][#"Blank check Origin Name"]{0} = true),
+    #"Expanded GroupedData37" = Table.ExpandTableColumn(FilteredTable37, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 37" = Table.AddColumn(#"Expanded GroupedData37", "Error", each "Blank check Origin Name"),
+    #"Removed Columns37" = Table.RemoveColumns(#"Added error type 37",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 37 "Blank check Origin Name"
+    #"Appended37" = Table.Combine({#"Appended36", #"Removed Columns37"}),
+
+    // Group by "Blank check Origin City" where "BooleanColumn" is true
+    GroupedTable38 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable38 = Table.SelectRows(GroupedTable38, each [GroupedData][#"Blank check Origin City"]{0} = true),
+    #"Expanded GroupedData38" = Table.ExpandTableColumn(FilteredTable38, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 38" = Table.AddColumn(#"Expanded GroupedData38", "Error", each "Blank check Origin City"),
+    #"Removed Columns38" = Table.RemoveColumns(#"Added error type 38",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 38 "Blank check Origin City"
+    #"Appended38" = Table.Combine({#"Appended37", #"Removed Columns38"}),
+
+    // Group by "Blank check Origin Country" where "BooleanColumn" is true
+    GroupedTable39 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable39 = Table.SelectRows(GroupedTable39, each [GroupedData][#"Blank check Origin Country"]{0} = true),
+    #"Expanded GroupedData39" = Table.ExpandTableColumn(FilteredTable39, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 39" = Table.AddColumn(#"Expanded GroupedData39", "Error", each "Blank check Origin Country"),
+    #"Removed Columns39" = Table.RemoveColumns(#"Added error type 39",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 39 "Blank check Origin Country"
+    #"Appended39" = Table.Combine({#"Appended38", #"Removed Columns39"}),
+
+    // Group by "Blank check Destination Name" where "BooleanColumn" is true
+    GroupedTable40 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable40 = Table.SelectRows(GroupedTable40, each [GroupedData][#"Blank check Destination Name"]{0} = true),
+    #"Expanded GroupedData40" = Table.ExpandTableColumn(FilteredTable40, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 40" = Table.AddColumn(#"Expanded GroupedData40", "Error", each "Blank check Destination Name"),
+    #"Removed Columns40" = Table.RemoveColumns(#"Added error type 40",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 40 "Blank check Destination Name"
+    #"Appended40" = Table.Combine({#"Appended39", #"Removed Columns40"}),
+
+    // Group by "Blank check Destination City" where "BooleanColumn" is true
+    GroupedTable41 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable41 = Table.SelectRows(GroupedTable41, each [GroupedData][#"Blank check Destination City"]{0} = true),
+    #"Expanded GroupedData41" = Table.ExpandTableColumn(FilteredTable41, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 41" = Table.AddColumn(#"Expanded GroupedData41", "Error", each "Blank check Destination City"),
+    #"Removed Columns41" = Table.RemoveColumns(#"Added error type 41",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 41 "Blank check Destination City"
+    #"Appended41" = Table.Combine({#"Appended40", #"Removed Columns41"}),
+
+    // Group by "Blank check Destination Country" where "BooleanColumn" is true
+    GroupedTable42 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable42 = Table.SelectRows(GroupedTable42, each [GroupedData][#"Blank check Destination Country"]{0} = true),
+    #"Expanded GroupedData42" = Table.ExpandTableColumn(FilteredTable42, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 42" = Table.AddColumn(#"Expanded GroupedData42", "Error", each "Blank check Destination Country"),
+    #"Removed Columns42" = Table.RemoveColumns(#"Added error type 42",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 42 "Blank check Destination Country"
+    #"Appended42" = Table.Combine({#"Appended41", #"Removed Columns42"}),
+
+    // Group by "Blank check Shipment #" where "BooleanColumn" is true
+    GroupedTable43 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable43 = Table.SelectRows(GroupedTable43, each [GroupedData][#"Blank check Shipment #"]{0} = true),
+    #"Expanded GroupedData43" = Table.ExpandTableColumn(FilteredTable43, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 43" = Table.AddColumn(#"Expanded GroupedData43", "Error", each "Blank check Shipment #"),
+    #"Removed Columns43" = Table.RemoveColumns(#"Added error type 43",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 43 "Blank check Shipment #"
+    #"Appended43" = Table.Combine({#"Appended42", #"Removed Columns43"}),
+
+    // Group by "Blank check Shipment Status" where "BooleanColumn" is true
+    GroupedTable44 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable44 = Table.SelectRows(GroupedTable44, each [GroupedData][#"Blank check Shipment Status"]{0} = true),
+    #"Expanded GroupedData44" = Table.ExpandTableColumn(FilteredTable44, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 44" = Table.AddColumn(#"Expanded GroupedData44", "Error", each "Blank check Shipment Status"),
+    #"Removed Columns44" = Table.RemoveColumns(#"Added error type 44",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 44 "Blank check Shipment Status"
+    #"Appended44" = Table.Combine({#"Appended43", #"Removed Columns44"}),
+
+    // Group by "Blank check Comments" where "BooleanColumn" is true
+    GroupedTable45 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable45 = Table.SelectRows(GroupedTable45, each [GroupedData][#"Blank check Comments"]{0} = true),
+    #"Expanded GroupedData45" = Table.ExpandTableColumn(FilteredTable45, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 45" = Table.AddColumn(#"Expanded GroupedData45", "Error", each "Blank check Comments"),
+    #"Removed Columns45" = Table.RemoveColumns(#"Added error type 45",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 45 "Blank check Comments"
+    #"Appended45" = Table.Combine({#"Appended44", #"Removed Columns45"})
+    
 in
     #"Appended45"
+
+FCL_check_greater_than_check
+
+let
+    Source = FCL_data,
+    #"Removed Columns" = Table.RemoveColumns(Source,{"Container Size", "Master Bill Of Lading (MBOL)", "House Bill Of Lading (HBOL)", "Lane ID", "Origin GSDB ", "Destination GSDB ", "Mode", "Carrier", "Vessel Name", "Voyage #", "Port Of Exit", "Port Of Arrival", "Incoterm", "Pallet", "Gross Weight (KG)", "Chargeable Weight (KG)", "Total Volume (CBM)", "Total Container Utilization", "Origin Name", "Origin City", "Origin Country", "Destination Name", "Destination City", "Destination Country", "Door To Port Transit Time", "Port To Port Transit Time", "Port To Door Transit Time", "Total Transit Time", "Shipment Status", "Comments", "Reason For Delay"}),
+    #"Added CBRD > CBCD" = Table.AddColumn(#"Removed Columns", "CBRD > CBCD", each if (([Container Booking Requested Date] = null) or ([Container Booking Confirmation Date] = null))  then "Blank" else [Container Booking Requested Date] > [Container Booking Confirmation Date]),
+    #"Added CBCD > CNRD" = Table.AddColumn(#"Added CBRD > CBCD", "CBCD > CNRD", each if (([Container Booking Confirmation Date] = null) or ([Collection Note Received Date] = null)) then "Blank" else [Container Booking Confirmation Date] > [Collection Note Received Date]),
+    #"Added CNRD > CPUD" = Table.AddColumn(#"Added CBCD > CNRD", "CNRD > CPUD", each if (([Collection Note Received Date] = null) or ([#"Container Pick Up Date "] = null)) then "Blank" else [Collection Note Received Date] > [#"Container Pick Up Date "]),
+    #"Added CPUD > AACC" = Table.AddColumn(#"Added CNRD > CPUD", "CPUD > AACC", each if (([#"Container Pick Up Date "] = null) or ([Arrived At Consol Center] = null)) then "Blank" else [#"Container Pick Up Date "] > [Arrived At Consol Center]),
+    #"Added AACC > AAPED" = Table.AddColumn(#"Added CPUD > AACC", "AACC > AAPED", each if (([Arrived At Consol Center] = null) or ([Arrived At Port of Exit Date] = null)) then "Blank" else [Arrived At Consol Center] > [Arrived At Port of Exit Date]),
+    #"Added AAPED > VLD" = Table.AddColumn(#"Added AACC > AAPED", "AAPED > VLD", each if (([Arrived At Port of Exit Date] = null) or ([Vessel Loading Date] = null)) then "Blank" else [Arrived At Port of Exit Date] > [Vessel Loading Date]),
+    #"Added VLD > EVDDAPE" = Table.AddColumn(#"Added AAPED > VLD", "VLD > EVDDAPE", each if (([Vessel Loading Date] = null) or ([Estimated Vessel Departure Date At Port of Exit] = null)) then "Blank" else [Vessel Loading Date] > [Estimated Vessel Departure Date At Port of Exit]),
+    #"Added EVDDAPE > AVDDAPE" = Table.AddColumn(#"Added VLD > EVDDAPE", "EVDDAPE > AVDDAPE", each if (([Estimated Vessel Departure Date At Port of Exit] = null) or ([Actual Vessel Departure Date At Port of Exit] = null)) then "Blank" else [Estimated Vessel Departure Date At Port of Exit] > [Actual Vessel Departure Date At Port of Exit]),
+    #"Added AVDDAPE > EVADAPE" = Table.AddColumn(#"Added EVDDAPE > AVDDAPE", "AVDDAPE > EVADAPE", each if (([Actual Vessel Departure Date At Port of Exit] = null) or ([Estimated Vessel Arrival Date At Port of Entry] = null)) then "Blank" else [Actual Vessel Departure Date At Port of Exit] > [Estimated Vessel Arrival Date At Port of Entry]),
+    #"Added EVADAPE > CDPOED" = Table.AddColumn(#"Added AVDDAPE > EVADAPE", "EVADAPE > CDPOED", each if (([Estimated Vessel Arrival Date At Port of Entry] = null) or ([Container Departed Port Of Entry Date] = null)) then "Blank" else [Estimated Vessel Arrival Date At Port of Entry] > [Container Departed Port Of Entry Date]),
+    #"Added CDPOED > CAALRYD" = Table.AddColumn(#"Added EVADAPE > CDPOED", "CDPOED > CAALRYD", each if (([Container Departed Port Of Entry Date] = null) or ([Container Arrived At Local Rail Yard Date] = null)) then "Blank" else [Container Departed Port Of Entry Date] > [Container Arrived At Local Rail Yard Date]),
+    #"Added CAALRYD > CDLRYD" = Table.AddColumn(#"Added CDPOED > CAALRYD", "CAALRYD > CDLRYD", each if (([Container Arrived At Local Rail Yard Date] = null) or ([Container Departed Local Rail Yard Date] = null)) then "Blank" else [Container Arrived At Local Rail Yard Date] > [Container Departed Local Rail Yard Date]),
+    #"Added CDLRYD > CDTDD" = Table.AddColumn(#"Added CAALRYD > CDLRYD", "CDLRYD > CDTDD", each if (([Container Departed Local Rail Yard Date] = null) or ([Container Delivered To Destination Date] = null)) then "Blank" else [Container Departed Local Rail Yard Date] > [Container Delivered To Destination Date])
+in
+    #"Added CDLRYD > CDTDD"
+
+FCL_list_greater_thank_check
+
+let
+    Source = FCL_check_greater_than_check,
+
+    // Group by "CBRD > CBCD" where "BooleanColumn" is true
+    GroupedTable = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable = Table.SelectRows(GroupedTable, each [GroupedData][#"CBRD > CBCD"]{0} = true),
+    #"Expanded GroupedData" = Table.ExpandTableColumn(FilteredTable, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type" = Table.AddColumn(#"Expanded GroupedData", "Error", each "Date incorrect Container Booking Requested Date > Container Booking Confirmation Date"),
+    #"Removed Columns" = Table.RemoveColumns(#"Added error type",{"GroupedData.BooleanColumn"}),
+
+    // Group by "CBCD > CNRD" where "BooleanColumn" is true
+    GroupedTable2 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable2 = Table.SelectRows(GroupedTable2, each [GroupedData][#"CBCD > CNRD"]{0} = true),
+    #"Expanded GroupedData2" = Table.ExpandTableColumn(FilteredTable2, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 2" = Table.AddColumn(#"Expanded GroupedData2", "Error", each "Container Booking Confirmation Date > Collection Note Received Date"),
+    #"Removed Columns2" = Table.RemoveColumns(#"Added error type 2",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 2 "CBCD > CNRD"
+    #"Appended2" = Table.Combine({#"Removed Columns", #"Removed Columns2"}),
+
+    // Group by "CNRD > CPUD" where "BooleanColumn" is true
+    GroupedTable3 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable3 = Table.SelectRows(GroupedTable3, each [GroupedData][#"CNRD > CPUD"]{0} = true),
+    #"Expanded GroupedData3" = Table.ExpandTableColumn(FilteredTable3, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 3" = Table.AddColumn(#"Expanded GroupedData3", "Error", each "Collection Note Received Date > Container Pick Up Date"),
+    #"Removed Columns3" = Table.RemoveColumns(#"Added error type 3",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 3 "CBCD > CNRD"
+    #"Appended3" = Table.Combine({#"Appended2", #"Removed Columns3"}),
+
+    // Group by "CPUD > AACC" where "BooleanColumn" is true
+    GroupedTable4 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable4 = Table.SelectRows(GroupedTable4, each [GroupedData][#"CPUD > AACC"]{0} = true),
+    #"Expanded GroupedData4" = Table.ExpandTableColumn(FilteredTable4, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 4" = Table.AddColumn(#"Expanded GroupedData4", "Error", each "Container Pick Up Date > Arrived At Consol Center"),
+    #"Removed Columns4" = Table.RemoveColumns(#"Added error type 4",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 4 "CPUD > AACC"
+    #"Appended4" = Table.Combine({#"Appended3", #"Removed Columns4"}),
+
+    // Group by "AACC > AAPED" where "BooleanColumn" is true
+    GroupedTable5 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable5 = Table.SelectRows(GroupedTable5, each [GroupedData][#"AACC > AAPED"]{0} = true),
+    #"Expanded GroupedData5" = Table.ExpandTableColumn(FilteredTable5, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 5" = Table.AddColumn(#"Expanded GroupedData5", "Error", each "Arrived At Consol Center > Arrived At Port of Exit Date"),
+    #"Removed Columns5" = Table.RemoveColumns(#"Added error type 5",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 5 "AACC > AAPED"
+    #"Appended5" = Table.Combine({#"Appended4", #"Removed Columns5"}),
+
+    // Group by "AAPED > VLD" where "BooleanColumn" is true
+    GroupedTable6 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable6 = Table.SelectRows(GroupedTable6, each [GroupedData][#"AAPED > VLD"]{0} = true),
+    #"Expanded GroupedData6" = Table.ExpandTableColumn(FilteredTable6, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 6" = Table.AddColumn(#"Expanded GroupedData6", "Error", each "Arrived At Port of Exit Date > Vessel Loading Date"),
+    #"Removed Columns6" = Table.RemoveColumns(#"Added error type 6",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 6 "AAPED > VLD"
+    #"Appended6" = Table.Combine({#"Appended5", #"Removed Columns6"}),
+
+    // Group by "VLD > EVDDAPE" where "BooleanColumn" is true
+    GroupedTable7 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable7 = Table.SelectRows(GroupedTable7, each [GroupedData][#"VLD > EVDDAPE"]{0} = true),
+    #"Expanded GroupedData7" = Table.ExpandTableColumn(FilteredTable7, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 7" = Table.AddColumn(#"Expanded GroupedData7", "Error", each "Vessel Loading Date > Estimated Vessel Departure Date At Port of Exit"),
+    #"Removed Columns7" = Table.RemoveColumns(#"Added error type 7",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 7 "VLD > EVDDAPE"
+    #"Appended7" = Table.Combine({#"Appended6", #"Removed Columns7"}),
+
+    // Group by "EVDDAPE > AVDDAPE" where "BooleanColumn" is true
+    GroupedTable8 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable8 = Table.SelectRows(GroupedTable8, each [GroupedData][#"EVDDAPE > AVDDAPE"]{0} = true),
+    #"Expanded GroupedData8" = Table.ExpandTableColumn(FilteredTable8, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 8" = Table.AddColumn(#"Expanded GroupedData8", "Error", each "Estimated Vessel Departure Date At Port of Exit > Actual Vessel Departure Date At Port of Exit"),
+    #"Removed Columns8" = Table.RemoveColumns(#"Added error type 8",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 8 "EVDDAPE > AVDDAPE"
+    #"Appended8" = Table.Combine({#"Appended7", #"Removed Columns8"}),
+
+    // Group by "AVDDAPE > EVADAPE" where "BooleanColumn" is true
+    GroupedTable9 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable9 = Table.SelectRows(GroupedTable9, each [GroupedData][#"AVDDAPE > EVADAPE"]{0} = true),
+    #"Expanded GroupedData9" = Table.ExpandTableColumn(FilteredTable9, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 9" = Table.AddColumn(#"Expanded GroupedData9", "Error", each "Actual Vessel Departure Date At Port of Exit > Estimated Vessel Arrival Date At Port of Entry"),
+    #"Removed Columns9" = Table.RemoveColumns(#"Added error type 9",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 9 "AVDDAPE > EVADAPE"
+    #"Appended9" = Table.Combine({#"Appended8", #"Removed Columns9"}),
+
+    // Group by "AVADAPE > CDPOED" where "BooleanColumn" is true
+    GroupedTable11 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable11 = Table.SelectRows(GroupedTable11, each [GroupedData][#"EVADAPE > CDPOED"]{0} = true),
+    #"Expanded GroupedData11" = Table.ExpandTableColumn(FilteredTable11, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 11" = Table.AddColumn(#"Expanded GroupedData11", "Error", each "Estimated Vessel Arrival Date At Port of Entry > Container Departed Port Of Entry Date"),
+    #"Removed Columns11" = Table.RemoveColumns(#"Added error type 11",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 11 "AVADAPE > CDPOED"
+    #"Appended11" = Table.Combine({#"Appended9", #"Removed Columns11"}),
+
+    // Group by "CDPOED > CAALRYD" where "BooleanColumn" is true
+    GroupedTable12 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable12 = Table.SelectRows(GroupedTable12, each [GroupedData][#"CDPOED > CAALRYD"]{0} = true),
+    #"Expanded GroupedData12" = Table.ExpandTableColumn(FilteredTable12, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 12" = Table.AddColumn(#"Expanded GroupedData12", "Error", each "Container Departed Port Of Entry Date > Container Arrived At Local Rail Yard Date"),
+    #"Removed Columns12" = Table.RemoveColumns(#"Added error type 12",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 12 "CDPOED > CAALRYD"
+    #"Appended12" = Table.Combine({#"Appended11", #"Removed Columns12"}),
+
+    // Group by "CAALRYD > CDLRYD" where "BooleanColumn" is true
+    GroupedTable13 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable13 = Table.SelectRows(GroupedTable13, each [GroupedData][#"CAALRYD > CDLRYD"]{0} = true),
+    #"Expanded GroupedData13" = Table.ExpandTableColumn(FilteredTable13, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 13" = Table.AddColumn(#"Expanded GroupedData13", "Error", each "Container Arrived At Local Rail Yard Date > Container Departed Local Rail Yard Date"),
+    #"Removed Columns13" = Table.RemoveColumns(#"Added error type 13",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 13 "CAALRYD > CDLRYD"
+    #"Appended13" = Table.Combine({#"Appended12", #"Removed Columns13"}),
+
+    // Group by "CDLRYD > CDTDD" where "BooleanColumn" is true
+    GroupedTable14 = Table.Group(Source, {"Shipment #"}, {{"GroupedData", each _, type table [#"Shipment #"=nullable any, BooleanColumn=nullable logical]}}),
+    // Filter out groups where "BooleanColumn" is not true
+    FilteredTable14 = Table.SelectRows(GroupedTable14, each [GroupedData][#"CDLRYD > CDTDD"]{0} = true),
+    #"Expanded GroupedData14" = Table.ExpandTableColumn(FilteredTable14, "GroupedData", {"BooleanColumn"}, {"GroupedData.BooleanColumn"}),
+    #"Added error type 14" = Table.AddColumn(#"Expanded GroupedData14", "Error", each "Container Departed Local Rail Yard Date > Container Delivered To Destination Date"),
+    #"Removed Columns14" = Table.RemoveColumns(#"Added error type 14",{"GroupedData.BooleanColumn"}),
+    //Appending datasets 14 "CDLRYD > CDTDD"
+    #"Appended14" = Table.Combine({#"Appended13", #"Removed Columns14"})
+
+in
+    #"Appended14"
+origin_destination
+
+let
+    Source = Excel.CurrentWorkbook(){[Name="Table11"]}[Content],
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Type", type text}, {"FCL origin/destination split", type text}, {"Responsible Side", type text}})
+in
+    #"Changed Type"
+
+FCL_error_list
+
+let
+    Source = FCL_list_blank_error_check,
+    #"Appended GSDB check" = Table.Combine({Source, FCL_GSDB_check}),
+    #"Merged responcible office(EU/US)" = Table.NestedJoin(#"Appended GSDB check", {"Error"}, origin_destination, {"FCL origin/destination split"}, "origin_destination", JoinKind.LeftOuter),
+    #"Expanded origin_destination" = Table.ExpandTableColumn(#"Merged responcible office(EU/US)", "origin_destination", {"Responsible Side"}, {"origin_destination.Responsible Side"}),
+    #"Extracted string from shipment #" = Table.AddColumn(#"Expanded origin_destination", "DSV country location", each Text.Range([#"Shipment #"], 0, 3)),
+    #"Merged DSV consol center" = Table.NestedJoin(#"Extracted string from shipment #", {"DSV country location"}, #"DSV_consol_center", {"DSV abbreviation"}, "DSV consol center", JoinKind.LeftOuter),
+    #"Expanded DSV consol center" = Table.ExpandTableColumn(#"Merged DSV consol center", "DSV consol center", {"DSV location"}, {"DSV consol center.DSV location"})
+in
+    #"Expanded DSV consol center"
+
+DSV_country_responcible
+
+let
+    Source = Excel.CurrentWorkbook(){[Name="Table15"]}[Content],
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Column1", type text}, {"Column2", type text}})
+in
+    #"Changed Type"
+
+DSV_consol_center
+
+let
+    Source = Excel.CurrentWorkbook(){[Name="Table16"]}[Content],
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"DSV abbreviation", type text}, {"DSV location", type text}})
+in
+    #"Changed Type"
+
+
+LCL_blank_error_check
+
+let
+    Source = LCL_data,
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Lane ID", type text}, {"Origin GSDB ", type text}, {"Destination GSDB ", type text}, {"Container Booking Requested Date", type date}, 
+    {"Container Booking Confirmation Date", type date}, {"Collection Note Received Date", type date}, {"Container Pick Up Date ", type date}, {"Arrived At Consol Center", type date}, 
+    {"Arrived At Port of Exit Date", type any}, {"Pallet", Int64.Type}, {"Gross Weight (KG)", type number}, {"Chargeable Weight (KG)", Int64.Type}, {"Total Volume (CBM)", type number}, 
+    {"Origin Name", type text}, {"Origin City", type text}, {"Origin Country", type text}, {"Destination Name", type text}, {"Destination City", type text}, {"Destination Country", type text}, 
+    {"Shipment #", type text}}),
+
+    #"Blank check Lane ID" = Table.AddColumn(#"Changed Type", "Blank check Lane ID", each if [#"Lane ID"] is null then true else false),
+    #"Blank check Origin GSDB " = Table.AddColumn(#"Blank check Lane ID", "Blank check Origin GSDB ", each if [#"Origin GSDB "] is null then true else false),
+    #"Blank check Container Booking Requested Date" = Table.AddColumn(#"Blank check Origin GSDB ", "Blank check Container Booking Requested Date", each if [#"Container Booking Requested Date"] is null then true else false),
+    #"Blank check Container Booking Confirmation Date" = Table.AddColumn(#"Blank check Container Booking Requested Date", "Blank check Container Booking Confirmation Date", each if [#"Container Booking Confirmation Date"] is null then true else false),
+    #"Blank check Collection Note Received Date" = Table.AddColumn(#"Blank check Container Booking Confirmation Date", "Blank check Collection Note Received Date", each if [#"Collection Note Received Date"] is null then true else false),
+    #"Blank check Container Pick Up Date " = Table.AddColumn(#"Blank check Collection Note Received Date", "Blank check Container Pick Up Date ", each if [#"Container Pick Up Date "] is null then true else false),
+    #"Blank check Arrived At Consol Center" = Table.AddColumn(#"Blank check Container Pick Up Date ", "Blank check Arrived At Consol Center", each if [#"Arrived At Consol Center"] is null then true else false),
+    #"Blank check Arrived At Port of Exit Date" = Table.AddColumn(#"Blank check Arrived At Consol Center", "Blank check Arrived At Port of Exit Date", each if [#"Arrived At Port of Exit Date"] is null then true else false),
+    #"Blank check Pallet" = Table.AddColumn(#"Blank check Arrived At Port of Exit Date", "Blank check Pallet", each if [#"Pallet"] is null then true else false),
+    #"Blank check Gross Weight (KG)" = Table.AddColumn(#"Blank check Pallet", "Blank check Gross Weight (KG)", each if [#"Gross Weight (KG)"] is null then true else false),
+    #"Blank check Chargeable Weight (KG)" = Table.AddColumn(#"Blank check Gross Weight (KG)", "Blank check Chargeable Weight (KG)", each if [#"Chargeable Weight (KG)"] is null then true else false),
+    #"Blank check Total Volume (CBM)" = Table.AddColumn(#"Blank check Chargeable Weight (KG)", "Blank check Total Volume (CBM)", each if [#"Total Volume (CBM)"] is null then true else false),
+    #"Blank check Origin Name" = Table.AddColumn(#"Blank check Total Volume (CBM)", "Blank check Origin Name", each if [#"Origin Name"] is null then true else false),
+    #"Blank check Origin City" = Table.AddColumn(#"Blank check Origin Name", "Blank check Origin City", each if [#"Origin City"] is null then true else false),
+    #"Blank check Origin Country" = Table.AddColumn(#"Blank check Origin City", "Blank check Origin Country", each if [#"Origin Country"] is null then true else false),
+    #"Blank check Destination Name" = Table.AddColumn(#"Blank check Origin Country", "Blank check Destination Name", each if [#"Destination Name"] is null then true else false),
+    #"Blank check Destination City" = Table.AddColumn(#"Blank check Destination Name", "Blank check Destination City", each if [#"Destination City"] is null then true else false),
+    #"Blank check Destination Country" = Table.AddColumn(#"Blank check Destination City", "Blank check Destination Country", each if [#"Destination Country"] is null then true else false),
+    #"Blank check Shipment #" = Table.AddColumn(#"Blank check Destination Country", "Blank check Shipment #", each if [#"Shipment #"] is null then true else false),
+
+    #"Filter_1" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Lane ID"] = true)),
+    #"Error_1" = Table.AddColumn(#"Filter_1", "Error", each "Blank check Lane ID"),
+
+    #"Filter_2" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Origin GSDB "] = true)),
+    #"Error_2" = Table.AddColumn(#"Filter_2", "Error", each "Blank check Origin GSDB "),
+    #"Appended_2" = Table.Combine({#"Error_1", #"Error_2"}),
+
+    #"Filter_3" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Container Booking Requested Date"] = true)),
+    #"Error_3" = Table.AddColumn(#"Filter_3", "Error", each "Blank check Container Booking Requested Date"),
+    #"Appended_3" = Table.Combine({#"Appended_2", #"Error_3"}),
+
+    #"Filter_4" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Container Booking Confirmation Date"] = true)),
+    #"Error_4" = Table.AddColumn(#"Filter_4", "Error", each "Blank check Container Booking Confirmation Date"),
+    #"Appended_4" = Table.Combine({#"Appended_3", #"Error_4"}),
+
+    #"Filter_5" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Collection Note Received Date"] = true)),
+    #"Error_5" = Table.AddColumn(#"Filter_5", "Error", each "Blank check Collection Note Received Date"),
+    #"Appended_5" = Table.Combine({#"Appended_4", #"Error_5"}),
+
+    #"Filter_6" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Container Pick Up Date "] = true)),
+    #"Error_6" = Table.AddColumn(#"Filter_6", "Error", each "Blank check Container Pick Up Date "),
+    #"Appended_6" = Table.Combine({#"Appended_5", #"Error_6"}),
+
+    #"Filter_7" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Arrived At Consol Center"] = true)),
+    #"Error_7" = Table.AddColumn(#"Filter_7", "Error", each "Blank check Arrived At Consol Center"),
+    #"Appended_7" = Table.Combine({#"Appended_6", #"Error_7"}),
+
+    #"Filter_8" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Arrived At Port of Exit Date"] = true)),
+    #"Error_8" = Table.AddColumn(#"Filter_8", "Error", each "Blank check Arrived At Port of Exit Date"),
+    #"Appended_8" = Table.Combine({#"Appended_7", #"Error_8"}),
+
+    #"Filter_9" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Pallet"] = true)),
+    #"Error_9" = Table.AddColumn(#"Filter_9", "Error", each "Blank check Pallet"),
+    #"Appended_9" = Table.Combine({#"Appended_8", #"Error_9"}),
+    
+    #"Filter_10" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Gross Weight (KG)"] = true)),
+    #"Error_10" = Table.AddColumn(#"Filter_10", "Error", each "Blank check Gross Weight (KG)"),
+    #"Appended_10" = Table.Combine({#"Appended_9", #"Error_10"}),
+
+    #"Filter_11" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Chargeable Weight (KG)"] = true)),
+    #"Error_11" = Table.AddColumn(#"Filter_11", "Error", each "Blank check Chargeable Weight (KG)"),
+    #"Appended_11" = Table.Combine({#"Appended_10", #"Error_11"}),
+
+    #"Filter_12" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Total Volume (CBM)"] = true)),
+    #"Error_12" = Table.AddColumn(#"Filter_12", "Error", each "Blank check Total Volume (CBM)"),
+    #"Appended_12" = Table.Combine({#"Appended_11", #"Error_12"}),
+
+    #"Filter_13" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Origin Name"] = true)),
+    #"Error_13" = Table.AddColumn(#"Filter_13", "Error", each "Blank check Origin Name"),
+    #"Appended_13" = Table.Combine({#"Appended_12", #"Error_13"}),
+
+    #"Filter_14" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Origin City"] = true)),
+    #"Error_14" = Table.AddColumn(#"Filter_14", "Error", each "Blank check Origin City"),
+    #"Appended_14" = Table.Combine({#"Appended_13", #"Error_14"}),
+
+    #"Filter_15" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Origin Country"] = true)),
+    #"Error_15" = Table.AddColumn(#"Filter_15", "Error", each "Blank check Origin Country"),
+    #"Appended_15" = Table.Combine({#"Appended_14", #"Error_15"}),
+
+    #"Filter_16" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Destination Name"] = true)),
+    #"Error_16" = Table.AddColumn(#"Filter_16", "Error", each "Blank check Destination Name"),
+    #"Appended_16" = Table.Combine({#"Appended_15", #"Error_16"}),
+
+    #"Filter_17" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Destination City"] = true)),
+    #"Error_17" = Table.AddColumn(#"Filter_17", "Error", each "Blank check Destination Name"),
+    #"Appended_17" = Table.Combine({#"Appended_16", #"Error_17"}),
+
+    #"Filter_18" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Destination Country"] = true)),
+    #"Error_18" = Table.AddColumn(#"Filter_18", "Error", each "Blank check Destination Country"),
+    #"Appended_18" = Table.Combine({#"Appended_17", #"Error_18"}),
+
+    #"Filter_19" = Table.SelectRows(#"Blank check Shipment #", each ([#"Blank check Shipment #"] = true)),
+    #"Error_19" = Table.AddColumn(#"Filter_19", "Error", each "Blank check Shipment #"),
+    #"Appended_19" = Table.Combine({#"Appended_18", #"Error_19"}),
+    #"Removed Columns" = Table.RemoveColumns(Appended_19,{"Blank check Lane ID", "Blank check Origin GSDB ", "Blank check Container Booking Requested Date", "Blank check Container Booking Confirmation Date", "Blank check Collection Note Received Date", "Blank check Container Pick Up Date ", "Blank check Arrived At Consol Center", "Blank check Arrived At Port of Exit Date", "Blank check Pallet", "Blank check Gross Weight (KG)", "Blank check Chargeable Weight (KG)", "Blank check Total Volume (CBM)", "Blank check Origin Name", "Blank check Origin City", "Blank check Origin Country", "Blank check Destination Name", "Blank check Destination City", "Blank check Destination Country", "Blank check Shipment #", "Lane ID", "Origin GSDB ", "Destination GSDB ", "Container Booking Requested Date", "Container Booking Confirmation Date", "Collection Note Received Date", "Container Pick Up Date ", "Arrived At Consol Center", "Arrived At Port of Exit Date", "Pallet", "Gross Weight (KG)", "Chargeable Weight (KG)", "Total Volume (CBM)", "Origin Name", "Origin City", "Origin Country", "Destination Name", "Destination City", "Destination Country"}),
+    #"Inserted First Characters" = Table.AddColumn(#"Removed Columns", "First Characters", each Text.Start([#"Shipment #"], 3), type text),
+    #"Renamed Columns" = Table.RenameColumns(#"Inserted First Characters",{{"First Characters", "DSV Country Location"}}),
+    #"Cleaned Error Text" = Table.TransformColumns(#"Renamed Columns",{{"Error", Text.Clean, type text}}),
+    #"Trimmed Error Text" = Table.TransformColumns(#"Cleaned Error Text",{{"Error", Text.Trim, type text}}),
+    #"Merged Queries" = Table.NestedJoin(#"Trimmed Error Text", {"DSV Country Location"}, #"DSV_consol_center", {"DSV abbreviation"}, "DSV consol center", JoinKind.LeftOuter),
+    #"Expanded DSV consol center" = Table.ExpandTableColumn(#"Merged Queries", "DSV consol center", {"DSV location"}, {"DSV consol center.DSV location"}),
+    #"Merged Queries1" = Table.NestedJoin(#"Expanded DSV consol center", {"Error"}, origin_destination, {"FCL origin/destination split"}, "origin_destination", JoinKind.LeftOuter),
+    #"Expanded origin_destination" = Table.ExpandTableColumn(#"Merged Queries1", "origin_destination", {"Responsible Side"}, {"origin_destination.Responsible Side"})
+in
+    #"Expanded origin_destination"
+
+FCL_lanes_no_match
+
+let
+    Source = FCL_data,
+    #"Removed Columns" = Table.RemoveColumns(Source,{"Mode", "Vessel Name", "Voyage #", "Booking #", "Container #", "Container Size", "Master Bill Of Lading (MBOL)", "House Bill Of Lading (HBOL)", 
+    "Container Booking Requested Date", "Container Booking Confirmation Date", "Collection Note Received Date", "Container Pick Up Date ", "Arrived At Consol Center", "Arrived At Port of Exit Date", 
+    "Vessel Loading Date", "Estimated Vessel Departure Date At Port of Exit", "Actual Vessel Departure Date At Port of Exit", "Estimated Vessel Arrival Date At Port of Entry", "Actual Vessel Arrival Date At Port of Entry", 
+    "Container Departed Port Of Entry Date", "Container Arrived At Local Rail Yard Date", "Container Last Free Day (LFD)", "Container Held At Rail", "Container Departed Local Rail Yard Date", "Container PrePull", 
+    "Container Delivered To Destination Date", "Returned To Local Rail Yard (Empty) Date", "MMP Received Date", "Incoterm", "Pallet", "Gross Weight (KG)", "Chargeable Weight (KG)", "Total Volume (CBM)", 
+    "Total Container Utilization", "Origin Name", "Origin City", "Origin Country", "Destination Name", "Destination City", "Destination Country", "Door To Port Transit Time", "Port To Port Transit Time", 
+    "Port To Door Transit Time", "Total Transit Time", "Shipment #", "Shipment Status", "Comments", "Reason For Delay"}),
+    #"Uppercased Text" = Table.TransformColumns(#"Removed Columns",{{"Lane ID", Text.Upper, type text}}),
+    #"Trimmed Text" = Table.TransformColumns(#"Uppercased Text",{{"Lane ID", Text.Trim, type text}}),
+    #"Cleaned Text" = Table.TransformColumns(#"Trimmed Text",{{"Lane ID", Text.Clean, type text}}),
+    #"Merged Queries" = Table.NestedJoin(#"Cleaned Text", {"Lane ID"}, Ford_contract_FCL, {"LANE ID"}, "Ford_contract_FCL", JoinKind.LeftOuter),
+    #"Expanded Ford_contract_FCL" = Table.ExpandTableColumn(#"Merged Queries", "Ford_contract_FCL", {"LANE ID", "Origin GSDB", "Destination GSDB", "Origin Port", "Destination Port"}, {"Ford_contract_FCL.LANE ID", 
+    "Ford_contract_FCL.Origin GSDB", "Ford_contract_FCL.Destination GSDB", "Ford_contract_FCL.Origin Port", "Ford_contract_FCL.Destination Port"}),
+    #"Filtered Rows" = Table.SelectRows(#"Expanded Ford_contract_FCL", each ([Ford_contract_FCL.LANE ID] = null)),
+    #"Removed Duplicates" = Table.Distinct(#"Filtered Rows", {"Lane ID"}),
+    #"Removed Columns1" = Table.RemoveColumns(#"Removed Duplicates",{"Origin GSDB ", "Destination GSDB ", "Carrier", "Port Of Exit", "Port Of Arrival", "Ford_contract_FCL.LANE ID", "Ford_contract_FCL.Origin GSDB", "Ford_contract_FCL.Destination GSDB", "Ford_contract_FCL.Origin Port", "Ford_contract_FCL.Destination Port"})
+in
+    #"Removed Columns1"
+
+FCL_GSDB_check
+
+let
+    Source = FCL_data,
+    #"Removed Columns" = Table.RemoveColumns(Source,{"Mode", "Vessel Name", "Voyage #", "Booking #", "Container #", "Container Size", "Master Bill Of Lading (MBOL)", "House Bill Of Lading (HBOL)", 
+    "Container Booking Requested Date", "Container Booking Confirmation Date", "Collection Note Received Date", "Container Pick Up Date ", "Arrived At Consol Center", "Arrived At Port of Exit Date", 
+    "Vessel Loading Date", "Estimated Vessel Departure Date At Port of Exit", "Actual Vessel Departure Date At Port of Exit", "Estimated Vessel Arrival Date At Port of Entry", "Actual Vessel Arrival Date At Port of Entry", 
+    "Container Departed Port Of Entry Date", "Container Arrived At Local Rail Yard Date", "Container Last Free Day (LFD)", "Container Held At Rail", "Container Departed Local Rail Yard Date", "Container PrePull", 
+    "Container Delivered To Destination Date", "Returned To Local Rail Yard (Empty) Date", "MMP Received Date", "Incoterm", "Pallet", "Gross Weight (KG)", "Chargeable Weight (KG)", "Total Volume (CBM)", 
+    "Total Container Utilization", "Origin Name", "Origin City", "Origin Country", "Destination Name", "Destination City", "Destination Country", "Door To Port Transit Time", "Port To Port Transit Time", 
+    "Port To Door Transit Time", "Total Transit Time", "Shipment Status", "Comments", "Reason For Delay"}),
+    #"Uppercased Text" = Table.TransformColumns(#"Removed Columns",{{"Lane ID", Text.Upper, type text}}),
+    #"Trimmed Text" = Table.TransformColumns(#"Uppercased Text",{{"Lane ID", Text.Trim, type text}}),
+    #"Cleaned Text" = Table.TransformColumns(#"Trimmed Text",{{"Lane ID", Text.Clean, type text}}),
+    #"Merged Queries" = Table.NestedJoin(#"Cleaned Text", {"Lane ID"}, Ford_contract_FCL, {"LANE ID"}, "Ford_contract_FCL", JoinKind.LeftOuter),
+    #"Expanded Ford_contract_FCL" = Table.ExpandTableColumn(#"Merged Queries", "Ford_contract_FCL", {"LANE ID", "Origin GSDB", "Destination GSDB", "Carrier", "Origin Port", "Destination Port"}, {"Ford_contract_FCL.LANE ID", "Ford_contract_FCL.Origin GSDB", "Ford_contract_FCL.Destination GSDB", "Ford_contract_FCL.Carrier", "Ford_contract_FCL.Origin Port", "Ford_contract_FCL.Destination Port"}),
+    #"Filtered Rows" = Table.SelectRows(#"Expanded Ford_contract_FCL", each ([Lane ID] <> "NVOCC")),
+    #"Renamed Columns" = Table.RenameColumns(#"Filtered Rows",{{"Origin GSDB ", "Origin GSDB"}, {"Destination GSDB ", "Destination GSDB"}}),
+
+    Lane_GSDB_error_check = Table.AddColumn(#"Renamed Columns", "Lane and GSDB check", each if List.NonNullCount({[Lane ID],[Origin GSDB ],[Destination GSDB],
+    [Carrier], [Ford_contract_FCL.LANE ID], [Ford_contract_FCL.Origin GSDB],[Ford_contract_FCL.Destination GSDB],[Ford_contract_FCL.Carrier]}) < 8 then "Wrong Lane ID was used or contains blank"
+    else if [Origin GSDB ] = [Ford_contract_FCL.Origin GSDB] then if [Destination GSDB] = [Ford_contract_FCL.Destination GSDB] then if [Carrier] = [Ford_contract_FCL.Carrier] 
+    then "Lane ID info correct" else "Origin GSDB error" else "Destination GSDB error" else "Origin GSDB error"),
+
+    port_error_check = Table.AddColumn(Lane_GSDB_error_check, "Port code check", each if List.NonNullCount({[Port Of Exit],[Port Of Arrival],[Ford_contract_FCL.Origin Port],[Ford_contract_FCL.Destination Port],[Lane and GSDB check]}) < 5 
+    then "Missing port information" else if [Lane and GSDB check] = "Lane ID info correct" then "Ports correct" else if [Port Of Exit] = [Ford_contract_FCL.Destination Port] then if [Port Of Arrival] = [Ford_contract_FCL.Origin Port] 
+    then "Port information correct" else "Origin port incorrect" else "Destination port incorrect"),
+    #"Filtered GSDB check" = Table.SelectRows(port_error_check, each ([Lane and GSDB check] <> "Lane ID info correct")),
+    #"Removed GSDB columns" = Table.RemoveColumns(#"Filtered GSDB check",{"Lane ID", "Origin GSDB", "Destination GSDB", "Carrier", "Port Of Exit", "Port Of Arrival", "Ford_contract_FCL.LANE ID", "Ford_contract_FCL.Origin GSDB", 
+    "Ford_contract_FCL.Destination GSDB", "Ford_contract_FCL.Carrier", "Ford_contract_FCL.Origin Port", "Ford_contract_FCL.Destination Port", "Port code check"}),
+    #"Renamed Columns1" = Table.RenameColumns(#"Removed GSDB columns",{{"Lane and GSDB check", "Error"}}),
+    #"Filtered port check" = Table.SelectRows(port_error_check, each ([Port code check] <> "Correct")),
+    #"Removed PORT columns" = Table.RemoveColumns(#"Filtered port check",{"Lane ID", "Origin GSDB", "Destination GSDB", "Carrier", "Port Of Exit", "Port Of Arrival", "Ford_contract_FCL.LANE ID", "Ford_contract_FCL.Origin GSDB", 
+    "Ford_contract_FCL.Destination GSDB", "Ford_contract_FCL.Carrier", "Ford_contract_FCL.Origin Port", "Ford_contract_FCL.Destination Port", "Lane and GSDB check"}),
+    #"Renamed Columns2" = Table.RenameColumns(#"Removed PORT columns",{{"Port code check", "Error"}}),
+    #"Appended" = Table.Combine({#"Renamed Columns1", #"Renamed Columns2"})
+
+in
+    #"Appended"
+
+
